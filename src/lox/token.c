@@ -30,16 +30,18 @@ Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_
   return new_token;
 }
 
-void free_token(Token token) {
-  switch (token.type) {
+void free_token(Token* token) {
+  switch (token->type) {
     case TOKEN_STRING:
-      free(token.literal.str);
+      free(token->literal.str);
       break;
     case TOKEN_ERROR:
-      free(token.literal.error);
+      free(token->literal.error);
       break;
     default:
       // no other memory to free
       break;
   }
+
+  free(token);
 }
