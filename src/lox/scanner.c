@@ -32,9 +32,9 @@ static inline Token* create_nil_token(Scanner* scanner, TokenType type);
 List scan_tokens(Scanner* scanner) {
   List tokens = new_list();
 
-  while (!is_scanner_at_end(scanner)) {
+  do {
     list_append(&tokens, scan_token(scanner));
-  }
+  } while (!is_scanner_at_end(scanner));
 
   return tokens;
 }
