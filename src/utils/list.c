@@ -23,7 +23,7 @@ void list_append(List* list, void* data) {
 }
 
 void list_foreach(List list, Iterator get_data) {
-  if (list.head == NULL) {
+  if (list.head == NULL || get_data == NULL) {
     return;
   }
 
@@ -42,7 +42,9 @@ void free_list(List* list, Iterator free_data) {
   while (curr != NULL) {
     Node* tmp = curr;
 
-    free_data(curr->data);
+    if (free_data != NULL) {
+      free_data(curr->data);
+    }
     curr = curr->next;
 
     free(tmp);

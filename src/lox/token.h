@@ -48,7 +48,7 @@ typedef struct {
   size_t line;
 } Token;
 
-static inline TokenLiteral new_null_literal() {
+static inline TokenLiteral new_nil_literal() {
   return ((TokenLiteral) { .nil = NULL });
 }
 
@@ -56,7 +56,7 @@ static inline TokenLiteral new_num_literal(double num) {
   return ((TokenLiteral) { .num = num });
 }
 
-static inline TokenLiteral new_str_literal(char* str, size_t len) {
+static inline TokenLiteral new_str_literal(const char* str, size_t len) {
   return ((TokenLiteral) { .str = xstrndup(str, len) });
 }
 
@@ -68,6 +68,6 @@ TokenLiteral new_err_literal(const char* message, ...);
 
 Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_t length, size_t line);
 
-void free_token(Token token);
+void free_token(Token* token);
 
 #endif /* CLOX_TOKEN_H */

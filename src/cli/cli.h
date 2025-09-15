@@ -30,6 +30,18 @@ Command parse_args(int argc, char* argv[]);
 
 CommandResult help_cmd(const char* lox_program_name);
 
+// clang-format off
+static const char* TOKEN_NAMES[] = {
+  "LEFT_PAREN", "RIGHT_PAREN",   "LEFT_BRACE", "RIGHT_BRACE", "COMMA",
+  "DOT",        "MINUS",         "PLUS",       "SEMICOLON",   "SLASH",
+  "STAR",       "BANG",          "BANG_EQUAL", "EQUAL",       "EQUAL_EQUAL",
+  "GREATER",    "GREATER_EQUAL", "LESS",       "LESS_EQUAL",  "IDENTIFIER",
+  "STRING",     "NUMBER",        "AND",        "CLASS",       "ELSE",
+  "FALSE",      "FOR",           "FUN",        "IF",          "NIL",
+  "OR",         "PRINT",         "RETURN",     "SUPER",       "THIS",
+  "TRUE",       "VAR",           "WHILE",      "ERROR",       "EOF"};
+// clang-format on
+
 CommandResult tokenize_cmd(FilePath file_path);
 
 #endif /* CLOX_CLI_H */
