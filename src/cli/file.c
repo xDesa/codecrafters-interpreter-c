@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,7 +12,7 @@ char* read_file_contents(const char* filename) {
   }
 
   fseek(file, 0, SEEK_END);
-  long file_size = ftell(file);
+  size_t file_size = ftell(file);
   rewind(file);
 
   char* file_contents = malloc(file_size + 1);
