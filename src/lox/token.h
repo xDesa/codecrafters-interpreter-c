@@ -1,8 +1,7 @@
 #ifndef CLOX_TOKEN_H
 #define CLOX_TOKEN_H
 
-#include "../utils/common.h"
-#include "../utils/mem.h"
+#include "value.h"
 
 // clang-format off
 typedef enum {
@@ -32,41 +31,21 @@ typedef enum {
 } TokenType;
 // clang-format on
 
-typedef union {
-  void* nil;
-  double num;
-  char* str;
-  bool boolean;
-  char* error;
-} TokenLiteral;
-
 typedef struct {
   TokenType type;
-  TokenLiteral literal;
+  Value literal; // store error message in str literal value
   const char* lexeme;
   size_t length;
   size_t line;
 } Token;
 
-static inline TokenLiteral new_nil_literal() {
-  return ((TokenLiteral) { .nil = NULL });
-}
+#ifndef ERROR_MSG_BUFFER_LENGTH
+#define ERROR_MSG_BUFFER_LENGTH 1024
+#endif
 
-static inline TokenLiteral new_num_literal(double num) {
-  return ((TokenLiteral) { .num = num });
-}
+Value new_err_value(const char* message, ...) __attribute__((format(printf, 1, 2)));
 
-static inline TokenLiteral new_str_literal(const char* str, size_t len) {
-  return ((TokenLiteral) { .str = xstrndup(str, len) });
-}
-
-static inline TokenLiteral new_bool_literal(bool boolean) {
-  return ((TokenLiteral) { .boolean = boolean });
-}
-
-TokenLiteral new_err_literal(const char* message, ...);
-
-Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_t length, size_t line);
+Token* new_token(TokenType type, Value literal, const char* lexeme, size_t length, size_t line) __attribute__((malloc));
 
 void free_token(Token* token);
 

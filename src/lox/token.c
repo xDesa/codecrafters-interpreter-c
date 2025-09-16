@@ -4,22 +4,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../utils/error.h"
 #include "../utils/mem.h"
+#include "value.h"
 
-TokenLiteral new_err_literal(const char* message, ...) {
-
+Value new_err_value(const char* message, ...) {
+  char buffer[ERROR_MSG_BUFFER_LENGTH];
   va_list args;
+
   va_start(args, message);
 
-  char* msg = vcreate_error_msg(message, args);
+  size_t length = vsnprintf(buffer, sizeof(buffer), message, args);
 
   va_end(args);
 
-  return (TokenLiteral) { .error = msg };
+  return new_str_value(buffer, length);
 }
 
-Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_t length, size_t line) {
+Token* new_token(TokenType type, Value literal, const char* lexeme, size_t length, size_t line) {
   Token* new_token = xmalloc(sizeof(Token));
   new_token->type = type;
   new_token->literal = literal;
@@ -31,17 +32,6 @@ Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_
 }
 
 void free_token(Token* token) {
-  switch (token->type) {
-    case TOKEN_STRING:
-      free(token->literal.str);
-      break;
-    case TOKEN_ERROR:
-      free(token->literal.error);
-      break;
-    default:
-      // no other memory to free
-      break;
-  }
-
+  free_value(token->literal);
   free(token);
 }

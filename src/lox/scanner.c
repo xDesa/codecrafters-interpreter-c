@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "token.h"
+#include "value.h"
 
 static Token* scan_token(Scanner* scanner);
 static bool skip_whitespaces_and_comments(Scanner* scanner);
@@ -26,7 +27,7 @@ static inline bool is_alphabetic(char c);
 static inline bool is_alphanumeric(char c);
 
 static inline size_t token_length(Scanner* scanner);
-static Token* create_token(Scanner* scanner, TokenType type, TokenLiteral literal);
+static Token* create_token(Scanner* scanner, TokenType type, Value literal);
 static inline Token* create_nil_token(Scanner* scanner, TokenType type);
 
 List scan_tokens(Scanner* scanner) {
@@ -43,7 +44,7 @@ static Token* scan_token(Scanner* scanner) {
   bool multiline_comment_closed = skip_whitespaces_and_comments(scanner);
 
   if (!multiline_comment_closed) {
-    return create_token(scanner, TOKEN_ERROR, new_err_literal("Unterminated multi-line comment"));
+    return create_token(scanner, TOKEN_ERROR, new_err_value("Unterminated multi-line comment"));
   }
 
   start_scanner(scanner);
@@ -94,7 +95,7 @@ static Token* scan_token(Scanner* scanner) {
     case '\"':
       return string(scanner);
     default:
-      return create_token(scanner, TOKEN_ERROR, new_err_literal("Unexpected character: '%c'", curr));
+      return create_token(scanner, TOKEN_ERROR, new_err_value("Unexpected character: '%c'", curr));
   }
 }
 
@@ -151,7 +152,7 @@ static Token* string(Scanner* scanner) {
   }
 
   if (is_scanner_at_end(scanner)) {
-    return create_token(scanner, TOKEN_ERROR, new_err_literal("Unterminated string."));
+    return create_token(scanner, TOKEN_ERROR, new_err_value("Unterminated string."));
   }
 
   advance(scanner); // consume closing double-quotes
@@ -159,7 +160,7 @@ static Token* string(Scanner* scanner) {
   const char* str_literal_start = scanner->start + 1;
   size_t str_literal_length = token_length(scanner) - 2;
 
-  return create_token(scanner, TOKEN_STRING, new_str_literal(str_literal_start, str_literal_length));
+  return create_token(scanner, TOKEN_STRING, new_str_value(str_literal_start, str_literal_length));
 }
 
 static Token* number(Scanner* scanner) {
@@ -184,7 +185,7 @@ static Token* number(Scanner* scanner) {
 
   double num = strtod(str_num, NULL);
 
-  return create_token(scanner, TOKEN_NUMBER, new_num_literal(num));
+  return create_token(scanner, TOKEN_NUMBER, new_num_value(num));
 }
 
 static TokenType match_keyword_token_type(Scanner* scanner, const char* keyword, TokenType type) {
@@ -328,7 +329,7 @@ static inline size_t token_length(Scanner* scanner) {
   return scanner->current - scanner->start;
 }
 
-static Token* create_token(Scanner* scanner, TokenType type, TokenLiteral literal) {
+static Token* create_token(Scanner* scanner, TokenType type, Value literal) {
   if (type == TOKEN_ERROR) {
     scanner->has_error = true;
   }
@@ -337,5 +338,5 @@ static Token* create_token(Scanner* scanner, TokenType type, TokenLiteral litera
 }
 
 static inline Token* create_nil_token(Scanner* scanner, TokenType type) {
-  return create_token(scanner, type, new_nil_literal());
+  return create_token(scanner, type, new_nil_value());
 }
