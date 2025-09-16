@@ -20,6 +20,10 @@ static inline List new_list() {
   return (List) { NULL, NULL, 0 };
 }
 
+static inline void* list_get_last_data(List list) {
+  return list.tail->data;
+}
+
 void list_append(List* list, void* data);
 
 void list_foreach(List list, Iterator get_data);

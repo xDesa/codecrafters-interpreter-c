@@ -34,7 +34,7 @@ List scan_tokens(Scanner* scanner) {
 
   do {
     list_append(&tokens, scan_token(scanner));
-  } while (!is_scanner_at_end(scanner));
+  } while (((Token*)list_get_last_data(tokens))->type != TOKEN_EOF);
 
   return tokens;
 }
