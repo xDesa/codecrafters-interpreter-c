@@ -7,7 +7,7 @@
 #include "token.h"
 
 static Token* scan_token(Scanner* scanner);
-static void skip_whitespaces_and_comments(Scanner* scanner);
+static bool skip_whitespaces_and_comments(Scanner* scanner);
 static Token* string(Scanner* scanner);
 static Token* number(Scanner* scanner);
 static Token* identifier(Scanner* scanner);
@@ -40,7 +40,11 @@ List scan_tokens(Scanner* scanner) {
 }
 
 static Token* scan_token(Scanner* scanner) {
-  skip_whitespaces_and_comments(scanner);
+  bool multiline_comment_closed = skip_whitespaces_and_comments(scanner);
+
+  if (!multiline_comment_closed) {
+    return create_token(scanner, TOKEN_ERROR, new_err_literal("Unterminated multi-line comment"));
+  }
 
   start_scanner(scanner);
 
@@ -94,7 +98,7 @@ static Token* scan_token(Scanner* scanner) {
   }
 }
 
-static void skip_whitespaces_and_comments(Scanner* scanner) {
+static bool skip_whitespaces_and_comments(Scanner* scanner) {
   while (true) {
     switch (peek(scanner)) {
       case ' ':
@@ -108,14 +112,35 @@ static void skip_whitespaces_and_comments(Scanner* scanner) {
           while (peek(scanner) != '\n' && !is_scanner_at_end(scanner)) {
             advance(scanner);
           }
+        } else if (peek_next(scanner) == '*') {
+          advance(scanner); // consume opening /
+          advance(scanner); // consume opening *
+          size_t opened_multiline_comments = 1;
+          while (opened_multiline_comments > 0 && !is_scanner_at_end(scanner)) {
+            if (peek(scanner) == '/' && peek_next(scanner) == '*') {
+              opened_multiline_comments++;
+            } else if (peek(scanner) == '*' && peek_next(scanner) == '/') {
+              opened_multiline_comments--;
+            }
+            if (opened_multiline_comments > 0) {
+              advance(scanner);
+            }
+          };
+
+          if (is_scanner_at_end(scanner)) {
+            return false;
+          }
+
+          advance(scanner); // consume closing *
+          advance(scanner); // consume closing /
         } else {
           // exit function, next lexeme is not a comment
-          return;
+          return true;
         }
         break;
       default:
         // exit function, next lexeme is not whitespace or comment
-        return;
+        return true;
     }
   }
 }
