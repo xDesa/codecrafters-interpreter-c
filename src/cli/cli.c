@@ -103,5 +103,5 @@ CommandResult tokenize_cmd(const char* file_path) {
 
 void report_syntax_error(Token token) {
   assert(token.type == TOKEN_ERROR);
-  fprintf(stderr, "[line %zu] Error: %s", token.line, token.literal.error);
+  fprintf(stderr, "[line %zu] Error: %s\n", token.line, token.literal.error);
 }
