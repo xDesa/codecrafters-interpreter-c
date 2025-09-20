@@ -1,5 +1,6 @@
 #include "parser.h"
 #include <stdio.h>
+#include "error.h"
 #include "expr.h"
 #include "token.h"
 
@@ -10,7 +11,7 @@ static Token* consume(Parser* parser, TokenType type);
 static inline bool is_parser_at_end(Parser* parser);
 static void synchronize(Parser* parser) __attribute__((unused));
 
-static inline ParseResult expression(Parser* parser, Expr** output, SyntaxError* err);
+static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult comparison(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult term(Parser* parser, Expr** output, SyntaxError* err);
@@ -49,8 +50,18 @@ ParseResult parse(Parser* parser, Expr** output, SyntaxError* err) {
   return expression(parser, output, err);
 }
 
-static inline ParseResult expression(Parser* parser, Expr** output, SyntaxError* err) {
-  return equality(parser, output, err);
+static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err) {
+  Expr* left = TRY_PARSE(parser, equality, err);
+
+  while (check(parser, TOKEN_COMMA)) {
+    Token* comma = advance(parser);
+    Expr* right = TRY_PARSE(parser, equality, err, {
+      free_expr(left);
+    });
+    left = new_binary_expr(left, comma, right);
+  }
+
+  return RETURN_OUTPUT(output, left);
 }
 
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err) {
