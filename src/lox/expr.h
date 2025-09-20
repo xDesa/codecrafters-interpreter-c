@@ -61,4 +61,6 @@ Expr* new_grouping_expr(Expr* subexpr);
 
 Expr* new_literal_expr(Token* literal);
 
+void free_expr(Expr* expr);
+
 #endif /* CLOX_EXPR_H */

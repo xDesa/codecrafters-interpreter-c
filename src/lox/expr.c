@@ -1,5 +1,7 @@
 #include "expr.h"
 #include <assert.h>
+#include <stdlib.h>
+#include "../utils/panic.h"
 #include "token.h"
 
 Expr* new_binary_expr(Expr* left, Token* operator, Expr* right) {
@@ -37,4 +39,32 @@ Expr* new_literal_expr(Token* literal) {
   literal_expr->literal = literal;
 
   return (Expr*)literal_expr;
+}
+
+void free_expr(Expr* expr) {
+  switch (expr->type) {
+    case EXPR_BINARY:
+      BinaryExpr* binary_expr = as_binary_expr(expr);
+      free_expr(binary_expr->left);
+      free_expr(binary_expr->right);
+      free(binary_expr);
+      break;
+    case EXPR_UNARY:
+      UnaryExpr* unary_expr = as_unary_expr(expr);
+      free_expr(unary_expr->right);
+      free(unary_expr);
+      break;
+    case EXPR_GROUPING:
+      GroupingExpr* grouping_expr = as_grouping_expr(expr);
+      free_expr(grouping_expr->subexpr);
+      free(grouping_expr);
+      break;
+    case EXPR_LITERAL:
+      LiteralExpr* literal_expr = as_literal_expr(expr);
+      free(literal_expr);
+      break;
+    default:
+      unreachable_code();
+      break;
+  }
 }

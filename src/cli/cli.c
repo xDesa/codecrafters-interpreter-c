@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../lox/parser.h"
 #include "../lox/scanner.h"
 #include "../lox/token.h"
 #include "../utils/list.h"
@@ -28,6 +29,12 @@ Command parse_args(int argc, char* argv[]) {
       return NEW_ERR_COMMAND;
     }
     return NEW_COMMAND(COMMAND_TOKENIZE, argv[2]);
+  } else if (STR_EQ(cmd, "parse")) {
+    if (argc < 3) {
+      fprintf(stderr, "Missing source file path\n");
+      return NEW_ERR_COMMAND;
+    }
+    return NEW_COMMAND(COMMAND_PARSE, argv[2]);
   } else {
     fprintf(stderr, "Uknown command \"%s\"\n", cmd);
     return NEW_ERR_COMMAND;
@@ -57,5 +64,33 @@ CommandResult tokenize_cmd(const char* file_path) {
   free_list(&tokens, (Iterator)free_token);
   free(file_contents);
 
-  return has_scanner_error(scanner) ? CMD_SYNTAX_ERR : CMD_OK;
+  return !has_scanner_error(scanner) ? CMD_OK : CMD_SYNTAX_ERR;
+}
+
+CommandResult parse_cmd(const char* file_path) {
+  char* file_contents = read_file_contents(file_path);
+
+  Scanner scanner = new_scanner(file_contents);
+
+  List tokens = scan_tokens(&scanner);
+
+  Parser parser = new_parser(tokens);
+
+  Expr* output = NULL;
+  SyntaxError err;
+
+  ParseResult res = parse(&parser, &output, &err);
+
+  if (res == PARSE_OK) {
+    println_expr(output);
+    free_expr(output);
+  } else {
+    report_syntax_error(err);
+    free_syntax_err(err);
+  }
+
+  free_list(&tokens, (Iterator)free_token);
+  free(file_contents);
+
+  return res == PARSE_OK ? CMD_OK : CMD_SYNTAX_ERR;
 }

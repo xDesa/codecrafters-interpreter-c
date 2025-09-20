@@ -7,7 +7,7 @@ void list_append(List* list, void* data) {
     return;
   }
 
-  Node* new_node = xmalloc(sizeof(Node));
+  ListNode* new_node = xmalloc(sizeof(ListNode));
   new_node->data = data;
   new_node->next = NULL;
 
@@ -27,7 +27,7 @@ void list_foreach(List list, Iterator get_data) {
     return;
   }
 
-  for (Node* curr = list.head; curr != NULL; curr = curr->next) {
+  for (ListNode* curr = list.head; curr != NULL; curr = curr->next) {
     get_data(curr->data);
   }
 }
@@ -37,10 +37,10 @@ void free_list(List* list, Iterator free_data) {
     return;
   }
 
-  Node* curr = list->head;
+  ListNode* curr = list->head;
 
   while (curr != NULL) {
-    Node* tmp = curr;
+    ListNode* tmp = curr;
 
     if (free_data != NULL) {
       free_data(curr->data);

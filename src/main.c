@@ -3,7 +3,7 @@
 #include <sysexits.h>
 
 #include "cli/cli.h"
-#include "utils/error.h"
+#include "utils/panic.h"
 
 int main(int argc, char* argv[]) {
   // Disable output buffering
@@ -24,6 +24,9 @@ int main(int argc, char* argv[]) {
       break;
     case COMMAND_TOKENIZE:
       cmd_result = tokenize_cmd(cmd.file_path);
+      break;
+    case COMMAND_PARSE:
+      cmd_result = parse_cmd(cmd.file_path);
       break;
     default:
       unreachable_code();

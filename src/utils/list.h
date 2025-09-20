@@ -3,14 +3,14 @@
 
 #include "common.h"
 
-typedef struct node_t {
+typedef struct list_node_t {
   void* data;
-  struct node_t* next;
-} Node;
+  struct list_node_t* next;
+} ListNode;
 
 typedef struct list_t {
-  Node* head;
-  Node* tail;
+  ListNode* head;
+  ListNode* tail;
   size_t size;
 } List;
 

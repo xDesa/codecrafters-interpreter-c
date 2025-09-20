@@ -4,7 +4,8 @@
 typedef enum {
   COMMAND_ERR,
   COMMAND_HELP,
-  COMMAND_TOKENIZE
+  COMMAND_TOKENIZE,
+  COMMAND_PARSE,
 } CommandType;
 
 typedef const char* FilePath;
@@ -31,5 +32,7 @@ Command parse_args(int argc, char* argv[]);
 CommandResult help_cmd(const char* lox_program_name);
 
 CommandResult tokenize_cmd(FilePath file_path);
+
+CommandResult parse_cmd(FilePath file_path);
 
 #endif /* CLOX_CLI_H */

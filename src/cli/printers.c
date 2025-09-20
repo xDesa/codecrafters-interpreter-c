@@ -3,12 +3,7 @@
 #include <stdio.h>
 
 #include "../lox/token.h"
-#include "../utils/error.h"
-
-static void report_syntax_error(Token token) {
-  assert(token.type == TOKEN_ERROR);
-  fprintf(stderr, "[line %zu] Error: %s\n", token.line, token.literal.error);
-}
+#include "../utils/panic.h"
 
 static inline bool is_int(double num) {
   return num == (int)num;
@@ -18,6 +13,21 @@ static const char* token_type_to_string(TokenType type);
 
 static inline void print_token_lexeme(Token* token) {
   printf("%.*s", (int)token->length, token->lexeme);
+}
+
+void report_syntax_error(SyntaxError err) {
+  Token* token = err.token;
+  switch (token->type) {
+    case TOKEN_ERROR:
+      fprintf(stderr, "[line %zu] Error: %s", token->line, token->literal.error);
+      break;
+    case TOKEN_EOF:
+      fprintf(stderr, "[line %zu] Error at end: %s\n", token->line, err.message);
+      break;
+    default:
+      fprintf(stderr, "[line %zu] Error at '%.*s': %s\n", token->line, (int)token->length, token->lexeme, err.message);
+      break;
+  }
 }
 
 static void print_literal_value(Token* token) {
@@ -49,7 +59,7 @@ static void print_literal_value(Token* token) {
 
 void print_token(Token* token) {
   if (token->type == TOKEN_ERROR) {
-    report_syntax_error(*token);
+    report_syntax_error(new_syntax_err(token, NULL));
     return;
   }
 
@@ -185,7 +195,7 @@ void rpn_print_expr(Expr* expr) {
       rpn_print_unary_expr(as_unary_expr(expr));
       break;
     case EXPR_GROUPING:
-      // do nothing in reverse polish notation
+      rpn_print_expr(as_grouping_expr(expr)->subexpr);
       break;
     case EXPR_LITERAL:
       rpn_print_literal_expr(as_literal_expr(expr));
@@ -198,12 +208,15 @@ void rpn_print_expr(Expr* expr) {
 
 static void rpn_print_binary_expr(BinaryExpr* expr) {
   rpn_print_expr(expr->left);
+  printf(" ");
   rpn_print_expr(expr->right);
+  printf(" ");
   print_token_lexeme(expr->operator);
 }
 
 static void rpn_print_unary_expr(UnaryExpr* expr) {
   rpn_print_expr(expr->right);
+  printf(" ");
   print_token_lexeme(expr->operator);
 }
 
