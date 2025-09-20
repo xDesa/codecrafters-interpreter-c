@@ -83,6 +83,10 @@ static Token* scan_token(Scanner* scanner) {
       return create_nil_token(scanner, TOKEN_STAR);
     case '/':
       return create_nil_token(scanner, TOKEN_SLASH);
+    case '?':
+      return create_nil_token(scanner, TOKEN_QUESTION_MARK);
+    case ':':
+      return create_nil_token(scanner, TOKEN_COLON);
     case '=':
       return create_nil_token(scanner, match(scanner, '=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
     case '!':

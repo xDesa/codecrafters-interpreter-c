@@ -131,6 +131,7 @@ static void print_binary_expr(BinaryExpr* expr);
 static void print_unary_expr(UnaryExpr* expr);
 static void print_grouping_expr(GroupingExpr* expr);
 static void print_literal_expr(LiteralExpr* expr);
+static void print_ternary_expr(TernaryExpr* expr);
 
 void print_expr(Expr* expr) {
   switch (expr->type) {
@@ -145,6 +146,9 @@ void print_expr(Expr* expr) {
       break;
     case EXPR_LITERAL:
       print_literal_expr(as_literal_expr(expr));
+      break;
+    case EXPR_TERNARY:
+      print_ternary_expr(as_ternary_expr(expr));
       break;
     default:
       unreachable_code();
@@ -182,9 +186,22 @@ static void print_literal_expr(LiteralExpr* expr) {
   print_literal_value(expr->literal);
 }
 
+static void print_ternary_expr(TernaryExpr* expr) {
+  printf("(");
+  printf("?:");
+  printf(" ");
+  print_expr(expr->condition);
+  printf(" ");
+  print_expr(expr->expr_if_true);
+  printf(" ");
+  print_expr(expr->expr_if_false);
+  printf(")");
+}
+
 static void rpn_print_binary_expr(BinaryExpr* expr);
 static void rpn_print_unary_expr(UnaryExpr* expr);
 static void rpn_print_literal_expr(LiteralExpr* expr);
+static void rpn_print_ternary_expr(TernaryExpr* expr);
 
 void rpn_print_expr(Expr* expr) {
   switch (expr->type) {
@@ -199,6 +216,9 @@ void rpn_print_expr(Expr* expr) {
       break;
     case EXPR_LITERAL:
       rpn_print_literal_expr(as_literal_expr(expr));
+      break;
+    case EXPR_TERNARY:
+      rpn_print_ternary_expr(as_ternary_expr(expr));
       break;
     default:
       unreachable_code();
@@ -222,4 +242,14 @@ static void rpn_print_unary_expr(UnaryExpr* expr) {
 
 static void rpn_print_literal_expr(LiteralExpr* expr) {
   print_literal_value(expr->literal);
+}
+
+static void rpn_print_ternary_expr(TernaryExpr* expr) {
+  rpn_print_expr(expr->condition);
+  printf(" ");
+  rpn_print_expr(expr->expr_if_true);
+  printf(" ");
+  rpn_print_expr(expr->expr_if_false);
+  printf(" ");
+  printf("?:");
 }

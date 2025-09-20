@@ -41,30 +41,44 @@ Expr* new_literal_expr(Token* literal) {
   return (Expr*)literal_expr;
 }
 
+Expr* new_ternary_expr(Expr* condition, Expr* expr_if_true, Expr* expr_if_false) {
+  TernaryExpr* ternary = xmalloc(sizeof(TernaryExpr));
+  ternary->base.type = EXPR_TERNARY;
+  ternary->condition = condition;
+  ternary->expr_if_true = expr_if_true;
+  ternary->expr_if_false = expr_if_false;
+
+  return (Expr*)ternary;
+}
+
 void free_expr(Expr* expr) {
   switch (expr->type) {
     case EXPR_BINARY:
       BinaryExpr* binary_expr = as_binary_expr(expr);
       free_expr(binary_expr->left);
       free_expr(binary_expr->right);
-      free(binary_expr);
       break;
     case EXPR_UNARY:
       UnaryExpr* unary_expr = as_unary_expr(expr);
       free_expr(unary_expr->right);
-      free(unary_expr);
       break;
     case EXPR_GROUPING:
       GroupingExpr* grouping_expr = as_grouping_expr(expr);
       free_expr(grouping_expr->subexpr);
-      free(grouping_expr);
       break;
     case EXPR_LITERAL:
-      LiteralExpr* literal_expr = as_literal_expr(expr);
-      free(literal_expr);
+      // nothing internal to free
+      break;
+    case EXPR_TERNARY:
+      TernaryExpr* ternary_expr = as_ternary_expr(expr);
+      free_expr(ternary_expr->condition);
+      free_expr(ternary_expr->expr_if_true);
+      free_expr(ternary_expr->expr_if_false);
       break;
     default:
       unreachable_code();
       break;
   }
+
+  free(expr);
 }

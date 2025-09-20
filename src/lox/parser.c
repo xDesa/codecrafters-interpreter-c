@@ -12,6 +12,7 @@ static inline bool is_parser_at_end(Parser* parser);
 static void synchronize(Parser* parser) __attribute__((unused));
 
 static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err);
+static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult comparison(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult term(Parser* parser, Expr** output, SyntaxError* err);
@@ -51,17 +52,42 @@ ParseResult parse(Parser* parser, Expr** output, SyntaxError* err) {
 }
 
 static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err) {
-  Expr* left = TRY_PARSE(parser, equality, err);
+  Expr* left = TRY_PARSE(parser, ternary, err);
 
   while (check(parser, TOKEN_COMMA)) {
     Token* comma = advance(parser);
-    Expr* right = TRY_PARSE(parser, equality, err, {
+    Expr* right = TRY_PARSE(parser, ternary, err, {
       free_expr(left);
     });
     left = new_binary_expr(left, comma, right);
   }
 
   return RETURN_OUTPUT(output, left);
+}
+
+static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err) {
+  Expr* condition = TRY_PARSE(parser, equality, err);
+
+  if (consume(parser, TOKEN_QUESTION_MARK) != NULL) {
+    Expr* expr_if_true = TRY_PARSE(parser, expression, err, {
+      free_expr(condition);
+    });
+
+    if (consume(parser, TOKEN_COLON) == NULL) {
+      free_expr(condition);
+      free_expr(expr_if_true);
+      return RETURN_SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ':' after expression."));
+    }
+
+    Expr* expr_if_false = TRY_PARSE(parser, ternary, err, {
+      free_expr(condition);
+      free_expr(expr_if_true);
+    });
+
+    return RETURN_OUTPUT(output, new_ternary_expr(condition, expr_if_true, expr_if_false));
+  }
+
+  return RETURN_OUTPUT(output, condition);
 }
 
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err) {
