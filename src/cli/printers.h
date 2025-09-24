@@ -5,8 +5,10 @@
 #include "../lox/error.h"
 #include "../lox/expr.h"
 #include "../lox/token.h"
+#include "../lox/value.h"
 
 void report_syntax_error(SyntaxError err);
+void report_runtime_error(RuntimeError err);
 
 void print_token(Token* token);
 
@@ -21,5 +23,7 @@ static inline void rpn_println_expr(Expr* expr) {
   rpn_print_expr(expr);
   printf("\n");
 }
+
+void print_value(Value value);
 
 #endif /* CLOX_PRINTERS_H */

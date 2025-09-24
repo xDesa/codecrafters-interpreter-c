@@ -70,12 +70,27 @@ static inline TokenLiteral new_str_literal(char* str, size_t length) {
 
 TokenLiteral new_err_literal(const char* message, ...) __attribute__((format(printf, 1, 2)));
 
+static inline bool is_nil_literal(Token* token) {
+  return token->type == TOKEN_NIL;
+}
+
+static inline bool is_num_literal(Token* token) {
+  return token->type == TOKEN_NUMBER;
+}
+
+static inline bool is_bool_literal(Token* token) {
+  return token->type == TOKEN_TRUE || token->type == TOKEN_FALSE;
+}
+
+static inline bool is_str_literal(Token* token) {
+  return token->type == TOKEN_STRING;
+}
+
 static inline bool is_token_literal_value(Token* token) {
-  return token->type == TOKEN_NIL
-      || token->type == TOKEN_NUMBER
-      || token->type == TOKEN_TRUE
-      || token->type == TOKEN_FALSE
-      || token->type == TOKEN_STRING;
+  return is_nil_literal(token)
+      || is_num_literal(token)
+      || is_bool_literal(token)
+      || is_str_literal(token);
 }
 
 Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_t length, size_t line) __attribute__((malloc));

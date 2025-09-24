@@ -28,15 +28,22 @@ int main(int argc, char* argv[]) {
     case COMMAND_PARSE:
       cmd_result = parse_cmd(cmd.file_path);
       break;
+    case COMMAND_EVALUATE:
+      cmd_result = evaluate_cmd(cmd.file_path);
+      break;
     default:
       unreachable_code();
   }
 
-  if (cmd_result == CMD_FORMAT_ERR) {
-    return EX_USAGE;
-  }
-  if (cmd_result == CMD_SYNTAX_ERR) {
-    return EX_DATAERR;
+  switch (cmd_result) {
+    case CMD_OK:
+      return EXIT_SUCCESS;
+    case CMD_FORMAT_ERR:
+      return EX_USAGE; // exit code 64
+    case CMD_SYNTAX_ERR:
+      return EX_DATAERR; // exit code 65
+    case CMD_RUNTIME_ERR:
+      return EX_SOFTWARE; // exit code 70
   }
 
   return EXIT_SUCCESS;

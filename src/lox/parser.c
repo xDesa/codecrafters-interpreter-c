@@ -31,20 +31,20 @@ static ParseResult primary(Parser* parser, Expr** output, SyntaxError* err);
     __internal_expr;                                                      \
   })
 
-#define RETURN_OUTPUT(dest, src) \
-  ({                             \
-    if (dest != NULL) {          \
-      *dest = src;               \
-    }                            \
-    PARSE_OK;                    \
+#define OUTPUT(dest, src) \
+  ({                      \
+    if (dest != NULL) {   \
+      *dest = src;        \
+    }                     \
+    PARSE_OK;             \
   })
 
-#define RETURN_SYNTAX_ERROR(dest, src) \
-  ({                                   \
-    if (dest != NULL) {                \
-      *dest = src;                     \
-    }                                  \
-    SYNTAX_ERROR;                      \
+#define SYNTAX_ERROR(dest, src) \
+  ({                            \
+    if (dest != NULL) {         \
+      *dest = src;              \
+    }                           \
+    SYNTAX_ERROR;               \
   })
 
 ParseResult parse(Parser* parser, Expr** output, SyntaxError* err) {
@@ -62,7 +62,7 @@ static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err) {
     left = new_binary_expr(left, comma, right);
   }
 
-  return RETURN_OUTPUT(output, left);
+  return OUTPUT(output, left);
 }
 
 static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err) {
@@ -76,7 +76,7 @@ static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err) {
     if (consume(parser, TOKEN_COLON) == NULL) {
       free_expr(condition);
       free_expr(expr_if_true);
-      return RETURN_SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ':' after expression."));
+      return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ':' after expression."));
     }
 
     Expr* expr_if_false = TRY_PARSE(parser, ternary, err, {
@@ -84,10 +84,10 @@ static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err) {
       free_expr(expr_if_true);
     });
 
-    return RETURN_OUTPUT(output, new_ternary_expr(condition, expr_if_true, expr_if_false));
+    return OUTPUT(output, new_ternary_expr(condition, expr_if_true, expr_if_false));
   }
 
-  return RETURN_OUTPUT(output, condition);
+  return OUTPUT(output, condition);
 }
 
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err) {
@@ -102,7 +102,7 @@ static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err) {
     left = new_binary_expr(left, operator, right);
   }
 
-  return RETURN_OUTPUT(output, left);
+  return OUTPUT(output, left);
 }
 
 static ParseResult comparison(Parser* parser, Expr** output, SyntaxError* err) {
@@ -120,7 +120,7 @@ static ParseResult comparison(Parser* parser, Expr** output, SyntaxError* err) {
     left = new_binary_expr(left, operator, right);
   }
 
-  return RETURN_OUTPUT(output, left);
+  return OUTPUT(output, left);
 }
 
 static ParseResult term(Parser* parser, Expr** output, SyntaxError* err) {
@@ -135,7 +135,7 @@ static ParseResult term(Parser* parser, Expr** output, SyntaxError* err) {
     left = new_binary_expr(left, operator, right);
   }
 
-  return RETURN_OUTPUT(output, left);
+  return OUTPUT(output, left);
 }
 
 static ParseResult factor(Parser* parser, Expr** output, SyntaxError* err) {
@@ -150,36 +150,36 @@ static ParseResult factor(Parser* parser, Expr** output, SyntaxError* err) {
     left = new_binary_expr(left, operator, right);
   }
 
-  return RETURN_OUTPUT(output, left);
+  return OUTPUT(output, left);
 }
 
 static ParseResult unary(Parser* parser, Expr** output, SyntaxError* err) {
   if (check(parser, TOKEN_MINUS) || check(parser, TOKEN_BANG)) {
     Token* operator = advance(parser);
     Expr* right = TRY_PARSE(parser, unary, err);
-    return RETURN_OUTPUT(output, new_unary_expr(operator, right));
+    return OUTPUT(output, new_unary_expr(operator, right));
   }
 
-  return RETURN_OUTPUT(output, TRY_PARSE(parser, primary, err, {}));
+  return OUTPUT(output, TRY_PARSE(parser, primary, err, {}));
 }
 
 static ParseResult primary(Parser* parser, Expr** output, SyntaxError* err) {
   Token* token = advance(parser);
 
   if (is_token_literal_value(token)) {
-    return RETURN_OUTPUT(output, new_literal_expr(token));
+    return OUTPUT(output, new_literal_expr(token));
   } else if (token->type == TOKEN_LEFT_PAREN) {
     Expr* expr = TRY_PARSE(parser, expression, err);
 
     if (consume(parser, TOKEN_RIGHT_PAREN) == NULL) {
-      return RETURN_SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ')' after expression."));
+      return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ')' after expression."));
     }
 
-    return RETURN_OUTPUT(output, new_grouping_expr(expr));
+    return OUTPUT(output, new_grouping_expr(expr));
   } else if (token->type == TOKEN_ERROR) {
-    return RETURN_SYNTAX_ERROR(err, new_syntax_err(token, NULL));
+    return SYNTAX_ERROR(err, new_syntax_err(token, NULL));
   } else {
-    return RETURN_SYNTAX_ERROR(err, new_syntax_err(token, "Expect expression."));
+    return SYNTAX_ERROR(err, new_syntax_err(token, "Expect expression."));
   }
 }
 

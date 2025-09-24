@@ -19,7 +19,7 @@ void report_syntax_error(SyntaxError err) {
   Token* token = err.token;
   switch (token->type) {
     case TOKEN_ERROR:
-      fprintf(stderr, "[line %zu] Error: %s", token->line, token->literal.error);
+      fprintf(stderr, "[line %zu] Error: %s\n", token->line, token->literal.error);
       break;
     case TOKEN_EOF:
       fprintf(stderr, "[line %zu] Error at end: %s\n", token->line, err.message);
@@ -28,6 +28,10 @@ void report_syntax_error(SyntaxError err) {
       fprintf(stderr, "[line %zu] Error at '%.*s': %s\n", token->line, (int)token->length, token->lexeme, err.message);
       break;
   }
+}
+
+void report_runtime_error(RuntimeError err) {
+  fprintf(stderr, "%s\n[line %zu]\n", err.message, err.token->line);
 }
 
 static void print_literal_value(Token* token) {
@@ -252,4 +256,25 @@ static void rpn_print_ternary_expr(TernaryExpr* expr) {
   rpn_print_expr(expr->expr_if_false);
   printf(" ");
   printf("?:");
+}
+
+void print_value(Value value) {
+  switch (value.type) {
+    case VALUE_NIL:
+      printf("nil");
+      break;
+    case VALUE_NUMBER:
+      printf("%g", as_num_value(value));
+      break;
+    case VALUE_BOOL:
+      printf("%s", as_bool_value(value) ? "true" : "false");
+      break;
+    case VALUE_STRING:
+      printf("%s", as_str_value(value));
+      break;
+    default:
+      unreachable_code();
+      break;
+  }
+  printf("\n");
 }
