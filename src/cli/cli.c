@@ -86,7 +86,7 @@ CommandResult parse_cmd(const char* file_path) {
   Expr* output = NULL;
   SyntaxError err;
 
-  ParseResult res = parse(&parser, &output, &err);
+  ParseResult res = parse_expr(&parser, &output, &err);
 
   if (res == PARSE_OK) {
     println_expr(output);
@@ -112,7 +112,7 @@ CommandResult evaluate_cmd(FilePath file_path) {
   Expr* parsed_expr = NULL;
   SyntaxError syntax_err;
 
-  ParseResult parse_res = parse(&parser, &parsed_expr, &syntax_err);
+  ParseResult parse_res = parse_expr(&parser, &parsed_expr, &syntax_err);
 
   if (parse_res != PARSE_OK) {
     report_syntax_error(syntax_err);

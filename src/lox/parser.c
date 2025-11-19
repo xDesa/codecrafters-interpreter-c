@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "error.h"
 #include "expr.h"
+#include "stmt.h"
 #include "token.h"
 
 static inline Token* peek(Parser* parser);
@@ -19,6 +20,10 @@ static ParseResult term(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult factor(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult unary(Parser* parser, Expr** output, SyntaxError* err);
 static ParseResult primary(Parser* parser, Expr** output, SyntaxError* err);
+
+static ParseResult statement(Parser* parser, Stmt** output, SyntaxError* err);
+static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError* err);
+static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError* err);
 
 #define TRY_PARSE(parser, parse_fn, err, before_return...)                \
   ({                                                                      \
@@ -47,7 +52,61 @@ static ParseResult primary(Parser* parser, Expr** output, SyntaxError* err);
     SYNTAX_ERROR;               \
   })
 
-ParseResult parse(Parser* parser, Expr** output, SyntaxError* err) {
+ParseResult parse(Parser* parser, List* output, List* errors) {
+  List stmt_list = new_list();
+  List errors_list = new_list();
+
+  while (!is_parser_at_end(parser)) {
+    Stmt* stmt;
+    SyntaxError err;
+
+    if (statement(parser, &stmt, &err) == PARSE_OK) {
+      list_append(&stmt_list, stmt);
+    } else {
+      SyntaxError* heap_err = xmalloc(sizeof(SyntaxError));
+      *heap_err = err;
+      list_append(&errors_list, heap_err);
+    }
+  }
+
+  if (errors_list.size > 0) {
+    return SYNTAX_ERROR(errors, errors_list);
+  }
+
+  return OUTPUT(output, stmt_list);
+}
+
+static ParseResult statement(Parser* parser, Stmt** output, SyntaxError* err) {
+  if (consume(parser, TOKEN_PRINT) != NULL) {
+    return print_stmt(parser, output, err);
+  }
+
+  return expr_stmt(parser, output, err);
+}
+
+static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError* err) {
+  Expr* expr = TRY_PARSE(parser, expression, err);
+
+  if (consume(parser, TOKEN_SEMICOLON) == NULL) {
+    free_expr(expr);
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ';' after value."));
+  }
+
+  return OUTPUT(output, new_print_stmt(expr));
+}
+
+static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError* err) {
+  Expr* expr = TRY_PARSE(parser, expression, err);
+
+  if (consume(parser, TOKEN_SEMICOLON) == NULL) {
+    free_expr(expr);
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ';' after value."));
+  }
+
+  return OUTPUT(output, new_expr_stmt(expr));
+}
+
+ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError* err) {
   return expression(parser, output, err);
 }
 
