@@ -12,18 +12,18 @@ static Token* consume(Parser* parser, TokenType type);
 static inline bool is_parser_at_end(Parser* parser);
 static void synchronize(Parser* parser) __attribute__((unused));
 
-static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err);
-static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err);
-static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err);
-static ParseResult comparison(Parser* parser, Expr** output, SyntaxError* err);
-static ParseResult term(Parser* parser, Expr** output, SyntaxError* err);
-static ParseResult factor(Parser* parser, Expr** output, SyntaxError* err);
-static ParseResult unary(Parser* parser, Expr** output, SyntaxError* err);
-static ParseResult primary(Parser* parser, Expr** output, SyntaxError* err);
+static ParseResult expression(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult ternary(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult equality(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult comparison(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult term(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult factor(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult unary(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult primary(Parser* parser, Expr** output, SyntaxError** err);
 
-static ParseResult statement(Parser* parser, Stmt** output, SyntaxError* err);
-static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError* err);
-static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError* err);
+static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err);
+static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError** err);
+static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 
 #define TRY_PARSE(parser, parse_fn, err, before_return...)                \
   ({                                                                      \
@@ -53,30 +53,25 @@ static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError* err);
   })
 
 ParseResult parse(Parser* parser, List* output, List* errors) {
-  List stmt_list = new_list();
-  List errors_list = new_list();
-
   while (!is_parser_at_end(parser)) {
     Stmt* stmt;
-    SyntaxError err;
+    SyntaxError* err;
 
     if (statement(parser, &stmt, &err) == PARSE_OK) {
-      list_append(&stmt_list, stmt);
+      list_append(output, stmt);
     } else {
-      SyntaxError* heap_err = xmalloc(sizeof(SyntaxError));
-      *heap_err = err;
-      list_append(&errors_list, heap_err);
+      list_append(errors, err);
     }
   }
 
-  if (errors_list.size > 0) {
-    return SYNTAX_ERROR(errors, errors_list);
+  if (errors->size > 0) {
+    return SYNTAX_ERROR;
   }
 
-  return OUTPUT(output, stmt_list);
+  return PARSE_OK;
 }
 
-static ParseResult statement(Parser* parser, Stmt** output, SyntaxError* err) {
+static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err) {
   if (consume(parser, TOKEN_PRINT) != NULL) {
     return print_stmt(parser, output, err);
   }
@@ -84,7 +79,7 @@ static ParseResult statement(Parser* parser, Stmt** output, SyntaxError* err) {
   return expr_stmt(parser, output, err);
 }
 
-static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError* err) {
+static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError** err) {
   Expr* expr = TRY_PARSE(parser, expression, err);
 
   if (consume(parser, TOKEN_SEMICOLON) == NULL) {
@@ -95,7 +90,7 @@ static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError* err) {
   return OUTPUT(output, new_print_stmt(expr));
 }
 
-static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError* err) {
+static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err) {
   Expr* expr = TRY_PARSE(parser, expression, err);
 
   if (consume(parser, TOKEN_SEMICOLON) == NULL) {
@@ -106,11 +101,11 @@ static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError* err) {
   return OUTPUT(output, new_expr_stmt(expr));
 }
 
-ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError* err) {
+ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError** err) {
   return expression(parser, output, err);
 }
 
-static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult expression(Parser* parser, Expr** output, SyntaxError** err) {
   Expr* left = TRY_PARSE(parser, ternary, err);
 
   while (check(parser, TOKEN_COMMA)) {
@@ -124,7 +119,7 @@ static ParseResult expression(Parser* parser, Expr** output, SyntaxError* err) {
   return OUTPUT(output, left);
 }
 
-static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult ternary(Parser* parser, Expr** output, SyntaxError** err) {
   Expr* condition = TRY_PARSE(parser, equality, err);
 
   if (consume(parser, TOKEN_QUESTION_MARK) != NULL) {
@@ -149,7 +144,7 @@ static ParseResult ternary(Parser* parser, Expr** output, SyntaxError* err) {
   return OUTPUT(output, condition);
 }
 
-static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult equality(Parser* parser, Expr** output, SyntaxError** err) {
   Expr* left = TRY_PARSE(parser, comparison, err);
 
   while (check(parser, TOKEN_BANG_EQUAL) || check(parser, TOKEN_EQUAL_EQUAL)) {
@@ -164,7 +159,7 @@ static ParseResult equality(Parser* parser, Expr** output, SyntaxError* err) {
   return OUTPUT(output, left);
 }
 
-static ParseResult comparison(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult comparison(Parser* parser, Expr** output, SyntaxError** err) {
   Expr* left = TRY_PARSE(parser, term, err);
 
   while (
@@ -182,7 +177,7 @@ static ParseResult comparison(Parser* parser, Expr** output, SyntaxError* err) {
   return OUTPUT(output, left);
 }
 
-static ParseResult term(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult term(Parser* parser, Expr** output, SyntaxError** err) {
   Expr* left = TRY_PARSE(parser, factor, err);
 
   while (
@@ -197,7 +192,7 @@ static ParseResult term(Parser* parser, Expr** output, SyntaxError* err) {
   return OUTPUT(output, left);
 }
 
-static ParseResult factor(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult factor(Parser* parser, Expr** output, SyntaxError** err) {
   Expr* left = TRY_PARSE(parser, unary, err);
 
   while (
@@ -212,7 +207,7 @@ static ParseResult factor(Parser* parser, Expr** output, SyntaxError* err) {
   return OUTPUT(output, left);
 }
 
-static ParseResult unary(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult unary(Parser* parser, Expr** output, SyntaxError** err) {
   if (check(parser, TOKEN_MINUS) || check(parser, TOKEN_BANG)) {
     Token* operator = advance(parser);
     Expr* right = TRY_PARSE(parser, unary, err);
@@ -222,7 +217,7 @@ static ParseResult unary(Parser* parser, Expr** output, SyntaxError* err) {
   return OUTPUT(output, TRY_PARSE(parser, primary, err, {}));
 }
 
-static ParseResult primary(Parser* parser, Expr** output, SyntaxError* err) {
+static ParseResult primary(Parser* parser, Expr** output, SyntaxError** err) {
   Token* token = advance(parser);
 
   if (is_token_literal_value(token)) {

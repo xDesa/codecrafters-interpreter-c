@@ -31,6 +31,9 @@ int main(int argc, char* argv[]) {
     case COMMAND_EVALUATE:
       cmd_result = evaluate_cmd(cmd.file_path);
       break;
+    case COMMAND_RUN:
+      cmd_result = run_cmd(cmd.file_path);
+      break;
     default:
       unreachable_code();
   }

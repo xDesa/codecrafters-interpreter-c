@@ -20,6 +20,6 @@ static inline Parser new_parser(List tokens) {
 }
 
 ParseResult parse(Parser* parser, List* output, List* errors);
-ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError* err);
+ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError** err);
 
 #endif /* CLOX_PARSER_H */

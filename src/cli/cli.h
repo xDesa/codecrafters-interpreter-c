@@ -7,6 +7,7 @@ typedef enum {
   COMMAND_TOKENIZE,
   COMMAND_PARSE,
   COMMAND_EVALUATE,
+  COMMAND_RUN,
 } CommandType;
 
 typedef const char* FilePath;
@@ -38,5 +39,7 @@ CommandResult tokenize_cmd(FilePath file_path);
 CommandResult parse_cmd(FilePath file_path);
 
 CommandResult evaluate_cmd(FilePath file_path);
+
+CommandResult run_cmd(FilePath file_path);
 
 #endif /* CLOX_CLI_H */
