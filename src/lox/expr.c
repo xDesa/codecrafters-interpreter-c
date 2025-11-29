@@ -51,6 +51,14 @@ Expr* new_ternary_expr(Expr* condition, Expr* expr_if_true, Expr* expr_if_false)
   return (Expr*)ternary;
 }
 
+Expr* new_var_expr(Token* name) {
+  VarExpr* var = xmalloc(sizeof(VarExpr));
+  var->base.type = EXPR_VAR;
+  var->name = name;
+
+  return (Expr*)var;
+}
+
 void free_expr(Expr* expr) {
   switch (expr->type) {
     case EXPR_BINARY:
@@ -74,6 +82,9 @@ void free_expr(Expr* expr) {
       free_expr(ternary_expr->condition);
       free_expr(ternary_expr->expr_if_true);
       free_expr(ternary_expr->expr_if_false);
+      break;
+    case EXPR_VAR:
+      // nothing internal to free
       break;
     default:
       unreachable_code();

@@ -9,6 +9,7 @@ typedef enum {
   EXPR_GROUPING,
   EXPR_LITERAL,
   EXPR_TERNARY,
+  EXPR_VAR,
 } ExprType;
 
 typedef struct {
@@ -45,6 +46,11 @@ typedef struct {
   Expr* expr_if_false;
 } TernaryExpr;
 
+typedef struct {
+  Expr base;
+  Token* name;
+} VarExpr;
+
 static inline BinaryExpr* as_binary_expr(Expr* expr) {
   return (BinaryExpr*)expr;
 }
@@ -65,6 +71,10 @@ static inline TernaryExpr* as_ternary_expr(Expr* expr) {
   return (TernaryExpr*)expr;
 }
 
+static inline VarExpr* as_var_expr(Expr* expr) {
+  return (VarExpr*)expr;
+}
+
 Expr* new_binary_expr(Expr* left, Token* operator, Expr * right);
 
 Expr* new_unary_expr(Token* operator, Expr * right);
@@ -74,6 +84,8 @@ Expr* new_grouping_expr(Expr* subexpr);
 Expr* new_literal_expr(Token* literal);
 
 Expr* new_ternary_expr(Expr* condition, Expr* expr_if_true, Expr* expr_if_false);
+
+Expr* new_var_expr(Token* name);
 
 void free_expr(Expr* expr);
 

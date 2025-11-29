@@ -21,6 +21,8 @@ static ParseResult factor(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult unary(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult primary(Parser* parser, Expr** output, SyntaxError** err);
 
+static ParseResult declaration(Parser* parser, Stmt** output, SyntaxError** err);
+static ParseResult var_declaration(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err);
@@ -57,10 +59,11 @@ ParseResult parse(Parser* parser, List* output, List* errors) {
     Stmt* stmt;
     SyntaxError* err;
 
-    if (statement(parser, &stmt, &err) == PARSE_OK) {
+    if (declaration(parser, &stmt, &err) == PARSE_OK) {
       list_append(output, stmt);
     } else {
       list_append(errors, err);
+      synchronize(parser);
     }
   }
 
@@ -69,6 +72,34 @@ ParseResult parse(Parser* parser, List* output, List* errors) {
   }
 
   return PARSE_OK;
+}
+
+static ParseResult declaration(Parser* parser, Stmt** output, SyntaxError** err) {
+  if (consume(parser, TOKEN_VAR) != NULL) {
+    return var_declaration(parser, output, err);
+  }
+
+  return statement(parser, output, err);
+}
+
+static ParseResult var_declaration(Parser* parser, Stmt** output, SyntaxError** err) {
+  Token* name = consume(parser, TOKEN_IDENTIFIER);
+
+  if (name == NULL) {
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect variable name."));
+  }
+
+  Expr* initializer = NULL;
+  if (consume(parser, TOKEN_EQUAL) != NULL) {
+    initializer = TRY_PARSE(parser, expression, err);
+  }
+
+  if (consume(parser, TOKEN_SEMICOLON) == NULL) {
+    free_expr(initializer);
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ';' after value."));
+  }
+
+  return OUTPUT(output, new_var_decl_stmt(name, initializer));
 }
 
 static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err) {
@@ -222,7 +253,13 @@ static ParseResult primary(Parser* parser, Expr** output, SyntaxError** err) {
 
   if (is_token_literal_value(token)) {
     return OUTPUT(output, new_literal_expr(token));
-  } else if (token->type == TOKEN_LEFT_PAREN) {
+  }
+
+  if (token->type == TOKEN_IDENTIFIER) {
+    return OUTPUT(output, new_var_expr(token));
+  }
+
+  if (token->type == TOKEN_LEFT_PAREN) {
     Expr* expr = TRY_PARSE(parser, expression, err);
 
     if (consume(parser, TOKEN_RIGHT_PAREN) == NULL) {
@@ -230,11 +267,13 @@ static ParseResult primary(Parser* parser, Expr** output, SyntaxError** err) {
     }
 
     return OUTPUT(output, new_grouping_expr(expr));
-  } else if (token->type == TOKEN_ERROR) {
-    return SYNTAX_ERROR(err, new_syntax_err(token, NULL));
-  } else {
-    return SYNTAX_ERROR(err, new_syntax_err(token, "Expect expression."));
   }
+
+  if (token->type == TOKEN_ERROR) {
+    return SYNTAX_ERROR(err, new_syntax_err(token, NULL));
+  }
+
+  return SYNTAX_ERROR(err, new_syntax_err(token, "Expect expression."));
 }
 
 static inline Token* peek(Parser* parser) {

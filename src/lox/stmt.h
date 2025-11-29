@@ -5,7 +5,8 @@
 
 typedef enum {
   STMT_EXPR,
-  STMT_PRINT
+  STMT_PRINT,
+  STMT_VAR_DECL,
 } StmtType;
 
 typedef struct {
@@ -22,6 +23,12 @@ typedef struct {
   Expr* expr;
 } PrintStmt;
 
+typedef struct {
+  Stmt base;
+  Token* name;
+  Expr* initializer;
+} VarDeclStmt;
+
 static inline ExprStmt* as_expr_stmt(Stmt* stmt) {
   return (ExprStmt*)stmt;
 }
@@ -30,9 +37,15 @@ static inline PrintStmt* as_print_stmt(Stmt* stmt) {
   return (PrintStmt*)stmt;
 }
 
+static inline VarDeclStmt* as_var_decl_stmt(Stmt* stmt) {
+  return (VarDeclStmt*)stmt;
+}
+
 Stmt* new_expr_stmt(Expr* expr);
 
 Stmt* new_print_stmt(Expr* expr);
+
+Stmt* new_var_decl_stmt(Token* name, Expr* initializer);
 
 void free_stmt(Stmt* stmt);
 
