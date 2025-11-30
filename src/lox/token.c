@@ -23,8 +23,7 @@ Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_
   Token* new_token = xmalloc(sizeof(Token));
   new_token->type = type;
   new_token->literal = literal;
-  new_token->lexeme = lexeme;
-  new_token->length = length;
+  new_token->lexeme = new_str_slice(lexeme, length);
   new_token->line = line;
 
   return new_token;

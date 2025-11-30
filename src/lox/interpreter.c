@@ -1,35 +1,38 @@
 #include "interpreter.h"
 #include <stdlib.h>
 #include "../utils/panic.h"
+#include "environment.h"
 #include "error.h"
 #include "expr.h"
 #include "stmt.h"
 #include "token.h"
 #include "value.h"
 
-#define TRY_EVAL(expr)                                \
+#define TRY_EVAL(env, expr)                           \
   ({                                                  \
-    Value __internal_value = evaluate(expr);          \
+    Value __internal_value = evaluate(env, expr);     \
     if (is_value_type(__internal_value, VALUE_ERR)) { \
       return __internal_value;                        \
     }                                                 \
     __internal_value;                                 \
   })
 
-static Value execute(Stmt* stmt);
-static Value execute_expr(ExprStmt* stmt);
-static Value execute_print(PrintStmt* stmt);
+static Value execute(Stmt* stmt, Environment* env);
+static Value execute_expr(ExprStmt* stmt, Environment* env);
+static Value execute_print(PrintStmt* stmt, Environment* env);
+static Value execute_var_decl(VarDeclStmt* stmt, Environment* env);
 
 static Value evaluate_literal(LiteralExpr* expr);
-static Value evaluate_unary(UnaryExpr* expr);
-static Value evaluate_binary(BinaryExpr* expr);
-static Value evaluate_ternary(TernaryExpr* expr);
+static Value evaluate_unary(UnaryExpr* expr, Environment* env);
+static Value evaluate_binary(BinaryExpr* expr, Environment* env);
+static Value evaluate_ternary(TernaryExpr* expr, Environment* env);
+static Value evaluate_var(VarExpr* expr, Environment* env);
 
 static bool is_truthy(Value value);
 
-bool interpret(List* stmts, RuntimeError* err) {
+bool interpret(Environment* env, List* stmts, RuntimeError* err) {
   for (ListNode* curr = stmts->head; curr != NULL; curr = curr->next) {
-    Value val = execute(curr->data);
+    Value val = execute(curr->data, env);
 
     if (is_value_type(val, VALUE_ERR)) {
       *err = as_err_value(val);
@@ -42,40 +45,56 @@ bool interpret(List* stmts, RuntimeError* err) {
   return true;
 }
 
-static Value execute(Stmt* stmt) {
+static Value execute(Stmt* stmt, Environment* env) {
   switch (stmt->type) {
     case STMT_EXPR:
-      return execute_expr(as_expr_stmt(stmt));
+      return execute_expr(as_expr_stmt(stmt), env);
     case STMT_PRINT:
-      return execute_print(as_print_stmt(stmt));
+      return execute_print(as_print_stmt(stmt), env);
+    case STMT_VAR_DECL:
+      return execute_var_decl(as_var_decl_stmt(stmt), env);
     default:
       unreachable_code();
   }
 }
 
-static Value execute_expr(ExprStmt* stmt) {
-  return evaluate(stmt->expr);
+static Value execute_expr(ExprStmt* stmt, Environment* env) {
+  return evaluate(env, stmt->expr);
 }
-static Value execute_print(PrintStmt* stmt) {
-  Value val = TRY_EVAL(stmt->expr);
+static Value execute_print(PrintStmt* stmt, Environment* env) {
+  Value val = TRY_EVAL(env, stmt->expr);
 
   print_value(val);
 
   return val;
 }
 
-Value evaluate(Expr* expr) {
+static Value execute_var_decl(VarDeclStmt* stmt, Environment* env) {
+  Value value = new_nil_value();
+
+  if (stmt->initializer != NULL) {
+    value = TRY_EVAL(env, stmt->initializer);
+  }
+
+  env_define(env, stmt->name->lexeme, value);
+
+  return new_nil_value();
+}
+
+Value evaluate(Environment* env, Expr* expr) {
   switch (expr->type) {
     case EXPR_LITERAL:
       return evaluate_literal(as_literal_expr(expr));
     case EXPR_GROUPING:
-      return evaluate(as_grouping_expr(expr)->subexpr);
+      return evaluate(env, as_grouping_expr(expr)->subexpr);
     case EXPR_UNARY:
-      return evaluate_unary(as_unary_expr(expr));
+      return evaluate_unary(as_unary_expr(expr), env);
     case EXPR_BINARY:
-      return evaluate_binary(as_binary_expr(expr));
+      return evaluate_binary(as_binary_expr(expr), env);
     case EXPR_TERNARY:
-      return evaluate_ternary(as_ternary_expr(expr));
+      return evaluate_ternary(as_ternary_expr(expr), env);
+    case EXPR_VAR:
+      return evaluate_var(as_var_expr(expr), env);
     default:
       unreachable_code();
   }
@@ -95,8 +114,8 @@ static Value evaluate_literal(LiteralExpr* expr) {
   }
 }
 
-static Value evaluate_unary(UnaryExpr* expr) {
-  Value right = TRY_EVAL(expr->right);
+static Value evaluate_unary(UnaryExpr* expr, Environment* env) {
+  Value right = TRY_EVAL(env, expr->right);
 
   Value val = new_nil_value();
 
@@ -120,9 +139,9 @@ static Value evaluate_unary(UnaryExpr* expr) {
   return val;
 }
 
-static Value evaluate_binary(BinaryExpr* expr) {
-  Value left = TRY_EVAL(expr->left);
-  Value right = TRY_EVAL(expr->right);
+static Value evaluate_binary(BinaryExpr* expr, Environment* env) {
+  Value left = TRY_EVAL(env, expr->left);
+  Value right = TRY_EVAL(env, expr->right);
 
   Value val = new_nil_value();
 
@@ -220,8 +239,8 @@ static Value evaluate_binary(BinaryExpr* expr) {
   return val;
 }
 
-static Value evaluate_ternary(TernaryExpr* expr) {
-  Value condition_value = TRY_EVAL(expr->condition);
+static Value evaluate_ternary(TernaryExpr* expr, Environment* env) {
+  Value condition_value = TRY_EVAL(env, expr->condition);
 
   Expr* expr_to_eval = is_truthy(condition_value)
       ? expr->expr_if_true
@@ -229,7 +248,19 @@ static Value evaluate_ternary(TernaryExpr* expr) {
 
   free_value(condition_value);
 
-  return evaluate(expr_to_eval);
+  return evaluate(env, expr_to_eval);
+}
+
+static Value evaluate_var(VarExpr* expr, Environment* env) {
+  StrSlice name = expr->name->lexeme;
+
+  Value* val = env_get(env, name);
+
+  if (val == NULL) {
+    return new_err_value(new_runtime_err(expr->name, "Undefined variable %.*s.", (int)name.length, name.str));
+  }
+
+  return *val;
 }
 
 // only false and nil are falsy

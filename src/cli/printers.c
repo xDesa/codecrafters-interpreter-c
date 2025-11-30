@@ -11,8 +11,8 @@ static inline bool is_int(double num) {
 
 static const char* token_type_to_string(TokenType type);
 
-static inline void print_token_lexeme(Token* token) {
-  printf("%.*s", (int)token->length, token->lexeme);
+static inline void print_token_lexeme(StrSlice lexeme) {
+  printf("%.*s", (int)lexeme.length, lexeme.str);
 }
 
 void report_syntax_error(SyntaxError* err) {
@@ -25,7 +25,7 @@ void report_syntax_error(SyntaxError* err) {
       fprintf(stderr, "[line %zu] Error at end: %s\n", token->line, err->message);
       break;
     default:
-      fprintf(stderr, "[line %zu] Error at '%.*s': %s\n", token->line, (int)token->length, token->lexeme, err->message);
+      fprintf(stderr, "[line %zu] Error at '%.*s': %s\n", token->line, (int)token->lexeme.length, token->lexeme.str, err->message);
       break;
   }
 }
@@ -45,7 +45,7 @@ static void print_literal_value(Token* token) {
       if (is_int(token->literal.num)) {
         printf("%d.0", (int)token->literal.num);
       } else {
-        print_token_lexeme(token);
+        print_token_lexeme(token->lexeme);
       }
       break;
     case TOKEN_TRUE:
@@ -70,7 +70,7 @@ void print_token(Token* token) {
   // print format: <TOKEN_TYPE> <LEXEME> <LITERAL|"null">
 
   printf("%s ", token_type_to_string(token->type));
-  print_token_lexeme(token);
+  print_token_lexeme(token->lexeme);
   printf(" ");
 
   // TOKEN_NIL literal is "null" in tokenize cmd, like non literal values tokens
@@ -162,7 +162,7 @@ void print_expr(Expr* expr) {
 
 static void print_binary_expr(BinaryExpr* expr) {
   printf("(");
-  print_token_lexeme(expr->operator);
+  print_token_lexeme(expr->operator->lexeme);
   printf(" ");
   print_expr(expr->left);
   printf(" ");
@@ -172,7 +172,7 @@ static void print_binary_expr(BinaryExpr* expr) {
 
 static void print_unary_expr(UnaryExpr* expr) {
   printf("(");
-  print_token_lexeme(expr->operator);
+  print_token_lexeme(expr->operator->lexeme);
   printf(" ");
   print_expr(expr->right);
   printf(")");
@@ -235,13 +235,13 @@ static void rpn_print_binary_expr(BinaryExpr* expr) {
   printf(" ");
   rpn_print_expr(expr->right);
   printf(" ");
-  print_token_lexeme(expr->operator);
+  print_token_lexeme(expr->operator->lexeme);
 }
 
 static void rpn_print_unary_expr(UnaryExpr* expr) {
   rpn_print_expr(expr->right);
   printf(" ");
-  print_token_lexeme(expr->operator);
+  print_token_lexeme(expr->operator->lexeme);
 }
 
 static void rpn_print_literal_expr(LiteralExpr* expr) {

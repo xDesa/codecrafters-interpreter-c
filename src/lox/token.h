@@ -2,6 +2,7 @@
 #define CLOX_TOKEN_H
 
 #include "../utils/mem.h"
+#include "../utils/slice.h"
 
 // clang-format off
 typedef enum {
@@ -43,8 +44,7 @@ typedef union {
 typedef struct {
   TokenType type;
   TokenLiteral literal;
-  const char* lexeme;
-  size_t length;
+  StrSlice lexeme;
   size_t line;
 } Token;
 

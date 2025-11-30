@@ -4,6 +4,8 @@
 #include <err.h>
 #include <sysexits.h>
 
-#define unreachable_code() (errx(EX_SOFTWARE, "Error: reach unreachable code in %s at %s:%d", __FUNCTION__, __FILE__, __LINE__))
+#define panic(message) (errx(EX_SOFTWARE, "Error: program panic with message '%s' in %s at %s:%d", message, __FUNCTION__, __FILE__, __LINE__))
+
+#define unreachable_code() (panic("reach unreachable code"))
 
 #endif /* CLOX_PANIC_H */
