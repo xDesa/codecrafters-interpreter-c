@@ -17,6 +17,8 @@ Environment new_env();
 
 void env_define(Environment* env, StrSlice name, Value value);
 
+Value* env_assign(Environment* env, StrSlice name, Value value);
+
 Value* env_get(Environment* env, StrSlice name);
 
 static inline void free_env(Environment* env) {

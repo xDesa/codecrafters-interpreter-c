@@ -27,6 +27,7 @@ static Value evaluate_unary(UnaryExpr* expr, Environment* env);
 static Value evaluate_binary(BinaryExpr* expr, Environment* env);
 static Value evaluate_ternary(TernaryExpr* expr, Environment* env);
 static Value evaluate_var(VarExpr* expr, Environment* env);
+static Value evaluate_assignment(AssignmentExpr* expr, Environment* env);
 
 static bool is_truthy(Value value);
 
@@ -95,6 +96,8 @@ Value evaluate(Environment* env, Expr* expr) {
       return evaluate_ternary(as_ternary_expr(expr), env);
     case EXPR_VAR:
       return evaluate_var(as_var_expr(expr), env);
+    case EXPR_ASSIGNMENT:
+      return evaluate_assignment(as_assignment_expr(expr), env);
     default:
       unreachable_code();
   }
@@ -261,6 +264,19 @@ static Value evaluate_var(VarExpr* expr, Environment* env) {
   }
 
   return *val;
+}
+
+static Value evaluate_assignment(AssignmentExpr* expr, Environment* env) {
+  Value value = TRY_EVAL(env, expr->value);
+
+  Value* var_value = env_assign(env, expr->name->lexeme, value);
+
+  if (var_value == NULL) {
+    StrSlice name = expr->name->lexeme;
+    return new_err_value(new_runtime_err(expr->name, "Undefined variable %.*s.", (int)name.length, name.str));
+  }
+
+  return value;
 }
 
 // only false and nil are falsy

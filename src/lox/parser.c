@@ -13,6 +13,7 @@ static inline bool is_parser_at_end(Parser* parser);
 static void synchronize(Parser* parser) __attribute__((unused));
 
 static ParseResult expression(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult assignment(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult ternary(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult comparison(Parser* parser, Expr** output, SyntaxError** err);
@@ -137,17 +138,40 @@ ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError** err) {
 }
 
 static ParseResult expression(Parser* parser, Expr** output, SyntaxError** err) {
-  Expr* left = TRY_PARSE(parser, ternary, err);
+  Expr* left = TRY_PARSE(parser, assignment, err);
 
   while (check(parser, TOKEN_COMMA)) {
     Token* comma = advance(parser);
-    Expr* right = TRY_PARSE(parser, ternary, err, {
+    Expr* right = TRY_PARSE(parser, assignment, err, {
       free_expr(left);
     });
     left = new_binary_expr(left, comma, right);
   }
 
   return OUTPUT(output, left);
+}
+
+static ParseResult assignment(Parser* parser, Expr** output, SyntaxError** err) {
+  Expr* expr = TRY_PARSE(parser, ternary, err);
+
+  if (check(parser, TOKEN_EQUAL)) {
+    Token* equals = advance(parser);
+
+    Expr* value = TRY_PARSE(parser, assignment, err, {
+      free_expr(expr);
+    });
+
+    if (is_expr_type(expr, EXPR_VAR)) {
+      Token* name = as_var_expr(expr)->name;
+      free_expr(expr);
+
+      return OUTPUT(output, new_assignment_expr(name, value));
+    }
+
+    return SYNTAX_ERROR(err, new_syntax_err(equals, "Invalid assignment target."));
+  }
+
+  return OUTPUT(output, expr);
 }
 
 static ParseResult ternary(Parser* parser, Expr** output, SyntaxError** err) {

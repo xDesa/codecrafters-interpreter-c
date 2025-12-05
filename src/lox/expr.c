@@ -59,6 +59,15 @@ Expr* new_var_expr(Token* name) {
   return (Expr*)var;
 }
 
+Expr* new_assignment_expr(Token* name, Expr* value) {
+  AssignmentExpr* assignment = xmalloc(sizeof(AssignmentExpr));
+  assignment->base.type = EXPR_ASSIGNMENT;
+  assignment->name = name;
+  assignment->value = value;
+
+  return (Expr*)assignment;
+}
+
 void free_expr(Expr* expr) {
   switch (expr->type) {
     case EXPR_BINARY:
@@ -85,6 +94,10 @@ void free_expr(Expr* expr) {
       break;
     case EXPR_VAR:
       // nothing internal to free
+      break;
+    case EXPR_ASSIGNMENT:
+      AssignmentExpr* assignment_expr = as_assignment_expr(expr);
+      free_expr(assignment_expr->value);
       break;
     default:
       unreachable_code();

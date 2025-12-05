@@ -16,11 +16,30 @@ Environment new_env() {
 }
 
 void env_define(Environment* env, StrSlice name, Value value) {
-  EnvField* field = xmalloc(sizeof(EnvField));
-  field->name = name;
-  field->value = value;
+  Value* curr_value = env_assign(env, name, value);
 
-  bst_insert(&env->tree, field);
+  if (curr_value != NULL) {
+    return;
+  }
+
+  // variable not present in env
+
+  EnvField* new_field = xmalloc(sizeof(EnvField));
+  new_field->name = name;
+  new_field->value = value;
+
+  bst_insert(&env->tree, new_field);
+}
+
+Value* env_assign(Environment* env, StrSlice name, Value value) {
+  Value* curr_value = env_get(env, name);
+
+  if (curr_value != NULL) {
+    free_value(*curr_value);
+    *curr_value = value;
+  }
+
+  return curr_value;
 }
 
 Value* env_get(Environment* env, StrSlice name) {

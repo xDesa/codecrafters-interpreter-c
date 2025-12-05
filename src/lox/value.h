@@ -1,7 +1,6 @@
 #ifndef CLOX_VALUE_H
 #define CLOX_VALUE_H
 
-#include "../utils/common.h"
 #include "../utils/mem.h"
 #include "error.h"
 
