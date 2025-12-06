@@ -1,4 +1,5 @@
 #include "interpreter.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "../utils/panic.h"
 #include "environment.h"
@@ -21,6 +22,7 @@ static Value execute(Stmt* stmt, Environment* env);
 static Value execute_expr(ExprStmt* stmt, Environment* env);
 static Value execute_print(PrintStmt* stmt, Environment* env);
 static Value execute_var_decl(VarDeclStmt* stmt, Environment* env);
+static Value execute_block(BlockStmt* stmt, Environment* enclosing_env);
 
 static Value evaluate_literal(LiteralExpr* expr);
 static Value evaluate_unary(UnaryExpr* expr, Environment* env);
@@ -54,6 +56,8 @@ static Value execute(Stmt* stmt, Environment* env) {
       return execute_print(as_print_stmt(stmt), env);
     case STMT_VAR_DECL:
       return execute_var_decl(as_var_decl_stmt(stmt), env);
+    case STMT_BLOCK:
+      return execute_block(as_block_stmt(stmt), env);
     default:
       unreachable_code();
   }
@@ -67,7 +71,9 @@ static Value execute_print(PrintStmt* stmt, Environment* env) {
 
   print_value(val);
 
-  return val;
+  free_value(val);
+
+  return new_nil_value();
 }
 
 static Value execute_var_decl(VarDeclStmt* stmt, Environment* env) {
@@ -78,6 +84,22 @@ static Value execute_var_decl(VarDeclStmt* stmt, Environment* env) {
   }
 
   env_define(env, stmt->name->lexeme, value);
+
+  return new_nil_value();
+}
+
+static Value execute_block(BlockStmt* stmt, Environment* enclosing_env) {
+  Environment block_env = new_env(enclosing_env);
+  RuntimeError err;
+
+  bool is_interpreter_ok
+      = interpret(&block_env, &stmt->stmts, &err);
+
+  free_env(&block_env);
+
+  if (!is_interpreter_ok) {
+    return new_err_value(err);
+  }
 
   return new_nil_value();
 }
@@ -263,15 +285,15 @@ static Value evaluate_var(VarExpr* expr, Environment* env) {
     return new_err_value(new_runtime_err(expr->name, "Undefined variable %.*s.", (int)name.length, name.str));
   }
 
-  return *val;
+  return clone_value(*val);
 }
 
 static Value evaluate_assignment(AssignmentExpr* expr, Environment* env) {
   Value value = TRY_EVAL(env, expr->value);
 
-  Value* var_value = env_assign(env, expr->name->lexeme, value);
+  Value* cur_var_value = env_assign(env, expr->name->lexeme, value);
 
-  if (var_value == NULL) {
+  if (cur_var_value == NULL) {
     StrSlice name = expr->name->lexeme;
     return new_err_value(new_runtime_err(expr->name, "Undefined variable %.*s.", (int)name.length, name.str));
   }

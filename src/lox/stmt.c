@@ -29,6 +29,14 @@ Stmt* new_var_decl_stmt(Token* name, Expr* initializer) {
   return (Stmt*)stmt;
 }
 
+Stmt* new_block_stmt(List stmts) {
+  BlockStmt* stmt = xmalloc(sizeof(BlockStmt));
+  stmt->base.type = STMT_BLOCK;
+  stmt->stmts = stmts;
+
+  return (Stmt*)stmt;
+}
+
 void free_stmt(Stmt* stmt) {
   switch (stmt->type) {
     case STMT_EXPR:
@@ -39,6 +47,9 @@ void free_stmt(Stmt* stmt) {
       break;
     case STMT_VAR_DECL:
       free_expr(as_var_decl_stmt(stmt)->initializer);
+      break;
+    case STMT_BLOCK:
+      free_list(&as_block_stmt(stmt)->stmts, (Iterator)free_stmt);
       break;
     default:
       unreachable_code();

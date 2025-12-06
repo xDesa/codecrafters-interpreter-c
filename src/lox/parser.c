@@ -27,6 +27,9 @@ static ParseResult var_declaration(Parser* parser, Stmt** output, SyntaxError** 
 static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err);
+static ParseResult block_stmt(Parser* parser, Stmt** output, SyntaxError** err);
+
+static ParseResult block(Parser* parser, List* stmts, SyntaxError** err);
 
 #define TRY_PARSE(parser, parse_fn, err, before_return...)                \
   ({                                                                      \
@@ -37,6 +40,17 @@ static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err);
       return __internal_res;                                              \
     }                                                                     \
     __internal_expr;                                                      \
+  })
+
+#define TRY_PARSE_STMT(parser, parse_fn, err, before_return...)           \
+  ({                                                                      \
+    Stmt* __internal_stmt;                                                \
+    ParseResult __internal_res = parse_fn(parser, &__internal_stmt, err); \
+    if (__internal_res != PARSE_OK) {                                     \
+      before_return;                                                      \
+      return __internal_res;                                              \
+    }                                                                     \
+    __internal_stmt;                                                      \
   })
 
 #define OUTPUT(dest, src) \
@@ -108,6 +122,10 @@ static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err) {
     return print_stmt(parser, output, err);
   }
 
+  if (consume(parser, TOKEN_LEFT_BRACE) != NULL) {
+    return block_stmt(parser, output, err);
+  }
+
   return expr_stmt(parser, output, err);
 }
 
@@ -131,6 +149,29 @@ static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err) {
   }
 
   return OUTPUT(output, new_expr_stmt(expr));
+}
+
+static ParseResult block_stmt(Parser* parser, Stmt** output, SyntaxError** err) {
+  List block_stmts = new_list();
+
+  if (block(parser, &block_stmts, err) == SYNTAX_ERROR) {
+    free_list(&block_stmts, (Iterator)free_stmt);
+    return SYNTAX_ERROR;
+  }
+
+  return OUTPUT(output, new_block_stmt(block_stmts));
+}
+
+static ParseResult block(Parser* parser, List* stmts, SyntaxError** err) {
+  while (!check(parser, TOKEN_RIGHT_BRACE) && !is_parser_at_end(parser)) {
+    list_append(stmts, TRY_PARSE_STMT(parser, declaration, err));
+  }
+
+  if (consume(parser, TOKEN_RIGHT_BRACE) == NULL) {
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect '}' after block."));
+  }
+
+  return PARSE_OK;
 }
 
 ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError** err) {

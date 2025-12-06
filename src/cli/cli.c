@@ -132,7 +132,7 @@ CommandResult evaluate_cmd(FilePath file_path) {
     return CMD_SYNTAX_ERR;
   }
 
-  Environment env = new_env();
+  Environment env = new_env(NULL);
   Value output_value = evaluate(&env, parsed_expr);
 
   int is_err_val = is_value_type(output_value, VALUE_ERR);
@@ -176,7 +176,7 @@ CommandResult run_cmd(FilePath file_path) {
   }
 
   RuntimeError err;
-  Environment env = new_env();
+  Environment env = new_env(NULL);
 
   bool interpreter_ok = interpret(&env, &stmts, &err);
 

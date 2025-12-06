@@ -4,8 +4,9 @@
 #include "../utils/bst.h"
 #include "value.h"
 
-typedef struct {
+typedef struct environment_t {
   BinarySearchTree tree;
+  struct environment_t* enclosing;
 } Environment;
 
 typedef struct {
@@ -13,7 +14,7 @@ typedef struct {
   Value value;
 } EnvField;
 
-Environment new_env();
+Environment new_env(Environment* enclosing);
 
 void env_define(Environment* env, StrSlice name, Value value);
 
