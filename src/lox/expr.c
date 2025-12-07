@@ -68,6 +68,16 @@ Expr* new_assignment_expr(Token* name, Expr* value) {
   return (Expr*)assignment;
 }
 
+Expr* new_logical_binary_expr(Expr* left, Token* operator, Expr* right) {
+  LogicalBinaryExpr* logical_bin_expr = xmalloc(sizeof(LogicalBinaryExpr));
+  logical_bin_expr->base.type = EXPR_LOGICAL_BINARY;
+  logical_bin_expr->left = left;
+  logical_bin_expr->operator = operator;
+  logical_bin_expr->right = right;
+
+  return (Expr*)logical_bin_expr;
+}
+
 void free_expr(Expr* expr) {
   switch (expr->type) {
     case EXPR_BINARY:
@@ -98,6 +108,11 @@ void free_expr(Expr* expr) {
     case EXPR_ASSIGNMENT:
       AssignmentExpr* assignment_expr = as_assignment_expr(expr);
       free_expr(assignment_expr->value);
+      break;
+    case EXPR_LOGICAL_BINARY:
+      LogicalBinaryExpr* logical_binary_expr = as_logical_binary_expr(expr);
+      free_expr(logical_binary_expr->left);
+      free_expr(logical_binary_expr->right);
       break;
     default:
       unreachable_code();

@@ -28,6 +28,7 @@ static Value execute_if(IfStmt* stmt, Environment* env);
 static Value evaluate_literal(LiteralExpr* expr);
 static Value evaluate_unary(UnaryExpr* expr, Environment* env);
 static Value evaluate_binary(BinaryExpr* expr, Environment* env);
+static Value evaluate_logical_binary(LogicalBinaryExpr* expr, Environment* env);
 static Value evaluate_ternary(TernaryExpr* expr, Environment* env);
 static Value evaluate_var(VarExpr* expr, Environment* env);
 static Value evaluate_assignment(AssignmentExpr* expr, Environment* env);
@@ -127,6 +128,8 @@ Value evaluate(Environment* env, Expr* expr) {
       return evaluate_unary(as_unary_expr(expr), env);
     case EXPR_BINARY:
       return evaluate_binary(as_binary_expr(expr), env);
+    case EXPR_LOGICAL_BINARY:
+      return evaluate_logical_binary(as_logical_binary_expr(expr), env);
     case EXPR_TERNARY:
       return evaluate_ternary(as_ternary_expr(expr), env);
     case EXPR_VAR:
@@ -275,6 +278,22 @@ static Value evaluate_binary(BinaryExpr* expr, Environment* env) {
   free_value(right);
 
   return val;
+}
+
+static Value evaluate_logical_binary(LogicalBinaryExpr* expr, Environment* env) {
+  Value left = TRY_EVAL(env, expr->left);
+
+  if (expr->operator->type == TOKEN_OR) {
+    if (is_truthy(left)) {
+      return left;
+    }
+  } else {
+    if (!is_truthy(left)) {
+      return left;
+    }
+  }
+
+  return evaluate(env, expr->right);
 }
 
 static Value evaluate_ternary(TernaryExpr* expr, Environment* env) {

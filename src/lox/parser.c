@@ -15,6 +15,8 @@ static void synchronize(Parser* parser) __attribute__((unused));
 static ParseResult expression(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult assignment(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult ternary(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult or(Parser* parser, Expr** output, SyntaxError** err);
+static ParseResult and(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult comparison(Parser* parser, Expr** output, SyntaxError** err);
 static ParseResult term(Parser* parser, Expr** output, SyntaxError** err);
@@ -248,7 +250,7 @@ static ParseResult assignment(Parser* parser, Expr** output, SyntaxError** err) 
 }
 
 static ParseResult ternary(Parser* parser, Expr** output, SyntaxError** err) {
-  Expr* condition = TRY_PARSE(parser, equality, err);
+  Expr* condition = TRY_PARSE(parser, or, err);
 
   if (consume(parser, TOKEN_QUESTION_MARK) != NULL) {
     Expr* expr_if_true = TRY_PARSE(parser, expression, err, {
@@ -270,6 +272,36 @@ static ParseResult ternary(Parser* parser, Expr** output, SyntaxError** err) {
   }
 
   return OUTPUT(output, condition);
+}
+
+static ParseResult or(Parser* parser, Expr** output, SyntaxError** err) {
+  Expr* left = TRY_PARSE(parser, and, err);
+
+  while (check(parser, TOKEN_OR)) {
+    Token* operator = advance(parser);
+    Expr* right = TRY_PARSE(parser, and, err, {
+      free_expr(left);
+    });
+
+    left = new_logical_binary_expr(left, operator, right);
+  }
+
+  return OUTPUT(output, left);
+}
+
+static ParseResult and(Parser* parser, Expr** output, SyntaxError** err) {
+  Expr* left = TRY_PARSE(parser, equality, err);
+
+  while (check(parser, TOKEN_AND)) {
+    Token* operator = advance(parser);
+    Expr* right = TRY_PARSE(parser, equality, err, {
+      free_expr(left);
+    });
+
+    left = new_logical_binary_expr(left, operator, right);
+  }
+
+  return OUTPUT(output, left);
 }
 
 static ParseResult equality(Parser* parser, Expr** output, SyntaxError** err) {
