@@ -37,6 +37,16 @@ Stmt* new_block_stmt(List stmts) {
   return (Stmt*)stmt;
 }
 
+Stmt* new_if_stmt(Expr* condition, Stmt* then_branch, Stmt* else_branch) {
+  IfStmt* stmt = xmalloc(sizeof(IfStmt));
+  stmt->base.type = STMT_IF;
+  stmt->condition = condition;
+  stmt->then_branch = then_branch;
+  stmt->else_branch = else_branch;
+
+  return (Stmt*)stmt;
+}
+
 void free_stmt(Stmt* stmt) {
   switch (stmt->type) {
     case STMT_EXPR:
@@ -50,6 +60,14 @@ void free_stmt(Stmt* stmt) {
       break;
     case STMT_BLOCK:
       free_list(&as_block_stmt(stmt)->stmts, (Iterator)free_stmt);
+      break;
+    case STMT_IF:
+      IfStmt* if_stmt = as_if_stmt(stmt);
+      free_expr(if_stmt->condition);
+      free_stmt(if_stmt->then_branch);
+      if (if_stmt->else_branch != NULL) {
+        free_stmt(if_stmt->else_branch);
+      }
       break;
     default:
       unreachable_code();

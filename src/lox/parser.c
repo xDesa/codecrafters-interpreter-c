@@ -28,6 +28,7 @@ static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult print_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult block_stmt(Parser* parser, Stmt** output, SyntaxError** err);
+static ParseResult if_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 
 static ParseResult block(Parser* parser, List* stmts, SyntaxError** err);
 
@@ -126,6 +127,10 @@ static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err) {
     return block_stmt(parser, output, err);
   }
 
+  if (consume(parser, TOKEN_IF) != NULL) {
+    return if_stmt(parser, output, err);
+  }
+
   return expr_stmt(parser, output, err);
 }
 
@@ -172,6 +177,33 @@ static ParseResult block(Parser* parser, List* stmts, SyntaxError** err) {
   }
 
   return PARSE_OK;
+}
+
+static ParseResult if_stmt(Parser* parser, Stmt** output, SyntaxError** err) {
+  if (consume(parser, TOKEN_LEFT_PAREN) == NULL) {
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect '(' after 'if'."));
+  }
+
+  Expr* condition = TRY_PARSE(parser, expression, err);
+
+  if (consume(parser, TOKEN_RIGHT_PAREN) == NULL) {
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ')' after if condition."));
+  }
+
+  Stmt* then_branch = TRY_PARSE_STMT(parser, statement, err, {
+    free_expr(condition);
+  });
+
+  Stmt* else_branch = NULL;
+
+  if (consume(parser, TOKEN_ELSE) != NULL) {
+    else_branch = TRY_PARSE_STMT(parser, statement, err, {
+      free_expr(condition);
+      free_stmt(then_branch);
+    });
+  }
+
+  return OUTPUT(output, new_if_stmt(condition, then_branch, else_branch));
 }
 
 ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError** err) {

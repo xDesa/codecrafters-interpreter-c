@@ -23,6 +23,7 @@ static Value execute_expr(ExprStmt* stmt, Environment* env);
 static Value execute_print(PrintStmt* stmt, Environment* env);
 static Value execute_var_decl(VarDeclStmt* stmt, Environment* env);
 static Value execute_block(BlockStmt* stmt, Environment* enclosing_env);
+static Value execute_if(IfStmt* stmt, Environment* env);
 
 static Value evaluate_literal(LiteralExpr* expr);
 static Value evaluate_unary(UnaryExpr* expr, Environment* env);
@@ -58,6 +59,8 @@ static Value execute(Stmt* stmt, Environment* env) {
       return execute_var_decl(as_var_decl_stmt(stmt), env);
     case STMT_BLOCK:
       return execute_block(as_block_stmt(stmt), env);
+    case STMT_IF:
+      return execute_if(as_if_stmt(stmt), env);
     default:
       unreachable_code();
   }
@@ -99,6 +102,16 @@ static Value execute_block(BlockStmt* stmt, Environment* enclosing_env) {
 
   if (!is_interpreter_ok) {
     return new_err_value(err);
+  }
+
+  return new_nil_value();
+}
+
+static Value execute_if(IfStmt* stmt, Environment* env) {
+  if (is_truthy(TRY_EVAL(env, stmt->condition))) {
+    return execute(stmt->then_branch, env);
+  } else if (stmt->else_branch != NULL) {
+    return execute(stmt->else_branch, env);
   }
 
   return new_nil_value();
