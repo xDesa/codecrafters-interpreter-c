@@ -136,6 +136,8 @@ static void print_unary_expr(UnaryExpr* expr);
 static void print_grouping_expr(GroupingExpr* expr);
 static void print_literal_expr(LiteralExpr* expr);
 static void print_ternary_expr(TernaryExpr* expr);
+static void print_var_expr(VarExpr* expr);
+static void print_assignment_expr(AssignmentExpr* expr);
 
 void print_expr(Expr* expr) {
   switch (expr->type) {
@@ -153,6 +155,12 @@ void print_expr(Expr* expr) {
       break;
     case EXPR_TERNARY:
       print_ternary_expr(as_ternary_expr(expr));
+      break;
+    case EXPR_VAR:
+      print_var_expr(as_var_expr(expr));
+      break;
+    case EXPR_ASSIGNMENT:
+      print_assignment_expr(as_assignment_expr(expr));
       break;
     default:
       unreachable_code();
@@ -202,10 +210,30 @@ static void print_ternary_expr(TernaryExpr* expr) {
   printf(")");
 }
 
+static void print_var_expr(VarExpr* expr) {
+  printf("(");
+  printf("var");
+  printf(" ");
+  print_token_lexeme(expr->name->lexeme);
+  printf(")");
+}
+
+static void print_assignment_expr(AssignmentExpr* expr) {
+  printf("(");
+  printf("=");
+  printf(" ");
+  print_token_lexeme(expr->name->lexeme);
+  printf(" ");
+  print_expr(expr->value);
+  printf(")");
+}
+
 static void rpn_print_binary_expr(BinaryExpr* expr);
 static void rpn_print_unary_expr(UnaryExpr* expr);
 static void rpn_print_literal_expr(LiteralExpr* expr);
 static void rpn_print_ternary_expr(TernaryExpr* expr);
+static void rpn_print_var_expr(VarExpr* expr);
+static void rpn_print_assignment_expr(AssignmentExpr* expr);
 
 void rpn_print_expr(Expr* expr) {
   switch (expr->type) {
@@ -223,6 +251,12 @@ void rpn_print_expr(Expr* expr) {
       break;
     case EXPR_TERNARY:
       rpn_print_ternary_expr(as_ternary_expr(expr));
+      break;
+    case EXPR_VAR:
+      rpn_print_var_expr(as_var_expr(expr));
+      break;
+    case EXPR_ASSIGNMENT:
+      rpn_print_assignment_expr(as_assignment_expr(expr));
       break;
     default:
       unreachable_code();
@@ -256,4 +290,18 @@ static void rpn_print_ternary_expr(TernaryExpr* expr) {
   rpn_print_expr(expr->expr_if_false);
   printf(" ");
   printf("?:");
+}
+
+static void rpn_print_var_expr(VarExpr* expr) {
+  print_token_lexeme(expr->name->lexeme);
+  printf(" ");
+  printf("var");
+}
+
+static void rpn_print_assignment_expr(AssignmentExpr* expr) {
+  print_token_lexeme(expr->name->lexeme);
+  printf(" ");
+  rpn_print_expr(expr->value);
+  printf(" ");
+  printf("=");
 }
