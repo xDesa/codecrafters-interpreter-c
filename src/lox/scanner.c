@@ -257,7 +257,16 @@ static Token* identifier(Scanner* scanner) {
     advance(scanner);
   }
 
-  return create_nil_token(scanner, identifier_type(scanner));
+  TokenType type = identifier_type(scanner);
+
+  switch (type) {
+    case TOKEN_FALSE:
+      return create_token(scanner, TOKEN_FALSE, new_bool_literal(false));
+    case TOKEN_TRUE:
+      return create_token(scanner, TOKEN_TRUE, new_bool_literal(true));
+    default:
+      return create_nil_token(scanner, type);
+  }
 }
 
 static inline bool is_scanner_at_end(Scanner* scanner) {
