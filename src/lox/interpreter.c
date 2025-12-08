@@ -235,28 +235,28 @@ static Value evaluate_binary(BinaryExpr* expr, Environment* env) {
       break;
     case TOKEN_GREATER:
       if (is_value_type(left, VALUE_NUMBER) && is_value_type(right, VALUE_NUMBER)) {
-        val = new_num_value(as_num_value(left) > as_num_value(right));
+        val = new_bool_value(as_num_value(left) > as_num_value(right));
       } else {
         val = new_err_value(new_runtime_err(expr->operator, "Operands must be a number."));
       }
       break;
     case TOKEN_GREATER_EQUAL:
       if (is_value_type(left, VALUE_NUMBER) && is_value_type(right, VALUE_NUMBER)) {
-        val = new_num_value(as_num_value(left) >= as_num_value(right));
+        val = new_bool_value(as_num_value(left) >= as_num_value(right));
       } else {
         val = new_err_value(new_runtime_err(expr->operator, "Operands must be a number."));
       }
       break;
     case TOKEN_LESS:
       if (is_value_type(left, VALUE_NUMBER) && is_value_type(right, VALUE_NUMBER)) {
-        val = new_num_value(as_num_value(left) < as_num_value(right));
+        val = new_bool_value(as_num_value(left) < as_num_value(right));
       } else {
         val = new_err_value(new_runtime_err(expr->operator, "Operands must be a number."));
       }
       break;
     case TOKEN_LESS_EQUAL:
       if (is_value_type(left, VALUE_NUMBER) && is_value_type(right, VALUE_NUMBER)) {
-        val = new_num_value(as_num_value(left) <= as_num_value(right));
+        val = new_bool_value(as_num_value(left) <= as_num_value(right));
       } else {
         val = new_err_value(new_runtime_err(expr->operator, "Operands must be a number."));
       }
