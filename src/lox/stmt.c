@@ -47,6 +47,15 @@ Stmt* new_if_stmt(Expr* condition, Stmt* then_branch, Stmt* else_branch) {
   return (Stmt*)stmt;
 }
 
+Stmt* new_while_stmt(Expr* condition, Stmt* body) {
+  WhileStmt* stmt = xmalloc(sizeof(WhileStmt));
+  stmt->base.type = STMT_WHILE;
+  stmt->condition = condition;
+  stmt->body = body;
+
+  return (Stmt*)stmt;
+}
+
 void free_stmt(Stmt* stmt) {
   switch (stmt->type) {
     case STMT_EXPR:
@@ -68,6 +77,11 @@ void free_stmt(Stmt* stmt) {
       if (if_stmt->else_branch != NULL) {
         free_stmt(if_stmt->else_branch);
       }
+      break;
+    case STMT_WHILE:
+      WhileStmt* while_stmt = as_while_stmt(stmt);
+      free_expr(while_stmt->condition);
+      free_stmt(while_stmt->body);
       break;
     default:
       unreachable_code();

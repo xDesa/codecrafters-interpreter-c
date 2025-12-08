@@ -24,6 +24,7 @@ static Value execute_print(PrintStmt* stmt, Environment* env);
 static Value execute_var_decl(VarDeclStmt* stmt, Environment* env);
 static Value execute_block(BlockStmt* stmt, Environment* enclosing_env);
 static Value execute_if(IfStmt* stmt, Environment* env);
+static Value execute_while(WhileStmt* stmt, Environment* env);
 
 static Value evaluate_literal(LiteralExpr* expr);
 static Value evaluate_unary(UnaryExpr* expr, Environment* env);
@@ -62,6 +63,8 @@ static Value execute(Stmt* stmt, Environment* env) {
       return execute_block(as_block_stmt(stmt), env);
     case STMT_IF:
       return execute_if(as_if_stmt(stmt), env);
+    case STMT_WHILE:
+      return execute_while(as_while_stmt(stmt), env);
     default:
       unreachable_code();
   }
@@ -113,6 +116,20 @@ static Value execute_if(IfStmt* stmt, Environment* env) {
     return execute(stmt->then_branch, env);
   } else if (stmt->else_branch != NULL) {
     return execute(stmt->else_branch, env);
+  }
+
+  return new_nil_value();
+}
+
+static Value execute_while(WhileStmt* stmt, Environment* env) {
+  while (is_truthy(TRY_EVAL(env, stmt->condition))) {
+    Value loop_res = execute(stmt->body, env);
+
+    if (is_value_type(loop_res, VALUE_ERR)) {
+      return loop_res;
+    }
+
+    free_value(loop_res);
   }
 
   return new_nil_value();

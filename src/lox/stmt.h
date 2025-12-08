@@ -10,6 +10,7 @@ typedef enum {
   STMT_VAR_DECL,
   STMT_BLOCK,
   STMT_IF,
+  STMT_WHILE,
 } StmtType;
 
 typedef struct {
@@ -44,6 +45,12 @@ typedef struct {
   Stmt* else_branch;
 } IfStmt;
 
+typedef struct {
+  Stmt base;
+  Expr* condition;
+  Stmt* body;
+} WhileStmt;
+
 static inline ExprStmt* as_expr_stmt(Stmt* stmt) {
   return (ExprStmt*)stmt;
 }
@@ -64,6 +71,10 @@ static inline IfStmt* as_if_stmt(Stmt* stmt) {
   return (IfStmt*)stmt;
 }
 
+static inline WhileStmt* as_while_stmt(Stmt* stmt) {
+  return (WhileStmt*)stmt;
+}
+
 Stmt* new_expr_stmt(Expr* expr);
 
 Stmt* new_print_stmt(Expr* expr);
@@ -73,6 +84,8 @@ Stmt* new_var_decl_stmt(Token* name, Expr* initializer);
 Stmt* new_block_stmt(List stmts);
 
 Stmt* new_if_stmt(Expr* condition, Stmt* then_branch, Stmt* else_branch);
+
+Stmt* new_while_stmt(Expr* condition, Stmt* body);
 
 void free_stmt(Stmt* stmt);
 
