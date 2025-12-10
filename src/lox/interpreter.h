@@ -7,7 +7,19 @@
 #include "expr.h"
 #include "value.h"
 
-Value evaluate(Environment* env, Expr* expr);
-bool interpret(Environment* env, List* stmts, RuntimeError* err);
+typedef struct {
+  Environment env;
+} Interpreter;
+
+static inline Interpreter new_interpreter() {
+  return (Interpreter) { .env = new_env(NULL) };
+}
+
+Value evaluate(Interpreter* interpreter, Expr* expr);
+bool interpret(Interpreter* interpreter, List* stmts, RuntimeError* err);
+
+static inline void free_interpreter(Interpreter interpreter) {
+  free_env(&interpreter.env);
+}
 
 #endif

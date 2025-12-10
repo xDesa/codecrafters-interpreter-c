@@ -132,8 +132,8 @@ CommandResult evaluate_cmd(FilePath file_path) {
     return CMD_SYNTAX_ERR;
   }
 
-  Environment env = new_env(NULL);
-  Value output_value = evaluate(&env, parsed_expr);
+  Interpreter interpreter = new_interpreter();
+  Value output_value = evaluate(&interpreter, parsed_expr);
 
   int is_err_val = is_value_type(output_value, VALUE_ERR);
 
@@ -144,7 +144,7 @@ CommandResult evaluate_cmd(FilePath file_path) {
   }
 
   free_value(output_value);
-  free_env(&env);
+  free_interpreter(interpreter);
   free_expr(parsed_expr);
   free_list(&tokens, (Iterator)free_token);
   free(file_contents);
@@ -176,16 +176,16 @@ CommandResult run_cmd(FilePath file_path) {
   }
 
   RuntimeError err;
-  Environment env = new_env(NULL);
+  Interpreter interpreter = new_interpreter();
 
-  bool interpreter_ok = interpret(&env, &stmts, &err);
+  bool interpreter_ok = interpret(&interpreter, &stmts, &err);
 
   if (!interpreter_ok) {
     report_runtime_error(err);
     free_runtime_err(err);
   }
 
-  free_env(&env);
+  free_interpreter(interpreter);
   free_list(&stmts, (Iterator)free_stmt);
   free_list(&errors, (Iterator)free_syntax_err);
   free_list(&tokens, (Iterator)free_token);
