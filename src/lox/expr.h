@@ -38,7 +38,8 @@ typedef struct {
 
 typedef struct {
   Expr base;
-  Token* literal;
+  Token* literal_token;
+  LiteralValue literal;
 } LiteralExpr;
 
 typedef struct {
@@ -106,7 +107,7 @@ Expr* new_unary_expr(Token* operator, Expr * right);
 
 Expr* new_grouping_expr(Expr* subexpr);
 
-Expr* new_literal_expr(Token* literal);
+Expr* new_literal_expr(Token* literal_token, LiteralValue literal);
 
 Expr* new_ternary_expr(Expr* condition, Expr* expr_if_true, Expr* expr_if_false);
 

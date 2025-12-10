@@ -31,11 +31,12 @@ Expr* new_grouping_expr(Expr* subexpr) {
   return (Expr*)grouping_expr;
 }
 
-Expr* new_literal_expr(Token* literal) {
-  assert(is_token_literal_value(literal));
+Expr* new_literal_expr(Token* literal_token, LiteralValue literal) {
+  assert(literal_token == NULL || is_literal_token(literal_token));
 
   LiteralExpr* literal_expr = xmalloc(sizeof(LiteralExpr));
   literal_expr->base.type = EXPR_LITERAL;
+  literal_expr->literal_token = literal_token;
   literal_expr->literal = literal;
 
   return (Expr*)literal_expr;
@@ -79,6 +80,10 @@ Expr* new_logical_binary_expr(Expr* left, Token* operator, Expr* right) {
 }
 
 void free_expr(Expr* expr) {
+  if (expr == NULL) {
+    return;
+  }
+
   switch (expr->type) {
     case EXPR_BINARY:
       BinaryExpr* binary_expr = as_binary_expr(expr);
@@ -94,7 +99,10 @@ void free_expr(Expr* expr) {
       free_expr(grouping_expr->subexpr);
       break;
     case EXPR_LITERAL:
-      // nothing internal to free
+      LiteralExpr* literal_expr = as_literal_expr(expr);
+      if (literal_expr->literal_token == NULL) {
+        free_literal(literal_expr->literal);
+      }
       break;
     case EXPR_TERNARY:
       TernaryExpr* ternary_expr = as_ternary_expr(expr);

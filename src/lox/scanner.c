@@ -26,7 +26,7 @@ static inline bool is_alphabetic(char c);
 static inline bool is_alphanumeric(char c);
 
 static inline size_t token_length(Scanner* scanner);
-static Token* create_token(Scanner* scanner, TokenType type, TokenLiteral literal);
+static Token* create_token(Scanner* scanner, TokenType type, LiteralValue literal);
 static inline Token* create_nil_token(Scanner* scanner, TokenType type);
 
 List scan_tokens(Scanner* scanner) {
@@ -341,7 +341,7 @@ static inline size_t token_length(Scanner* scanner) {
   return scanner->current - scanner->start;
 }
 
-static Token* create_token(Scanner* scanner, TokenType type, TokenLiteral literal) {
+static Token* create_token(Scanner* scanner, TokenType type, LiteralValue literal) {
   if (type == TOKEN_ERROR) {
     scanner->has_error = true;
   }

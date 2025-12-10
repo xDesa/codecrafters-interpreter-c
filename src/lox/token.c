@@ -6,7 +6,7 @@
 
 #include "../utils/mem.h"
 
-TokenLiteral new_err_literal(const char* message, ...) {
+LiteralValue new_err_literal(const char* message, ...) {
   char buffer[ERROR_MSG_BUFFER_LENGTH];
   va_list args;
 
@@ -16,10 +16,10 @@ TokenLiteral new_err_literal(const char* message, ...) {
 
   va_end(args);
 
-  return (TokenLiteral) { .error = xstrndup(buffer, length) };
+  return (LiteralValue) { LITERAL_ERR, { .error = xstrndup(buffer, length) } };
 }
 
-Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_t length, size_t line) {
+Token* new_token(TokenType type, LiteralValue literal, const char* lexeme, size_t length, size_t line) {
   Token* new_token = xmalloc(sizeof(Token));
   new_token->type = type;
   new_token->literal = literal;
@@ -29,18 +29,25 @@ Token* new_token(TokenType type, TokenLiteral literal, const char* lexeme, size_
   return new_token;
 }
 
-void free_token(Token* token) {
-  switch (token->type) {
-    case TOKEN_STRING:
-      free(token->literal.str);
+void free_literal(LiteralValue literal) {
+  switch (literal.type) {
+    case LITERAL_STR:
+      free(literal.data.str);
       break;
-    case TOKEN_ERROR:
-      free(token->literal.error);
+    case LITERAL_ERR:
+      free(literal.data.error);
       break;
     default:
       // no other memory to free
       break;
   }
+}
 
+void free_token(Token* token) {
+  if (token == NULL) {
+    return;
+  }
+
+  free_literal(token->literal);
   free(token);
 }

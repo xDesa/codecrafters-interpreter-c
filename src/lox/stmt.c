@@ -57,6 +57,10 @@ Stmt* new_while_stmt(Expr* condition, Stmt* body) {
 }
 
 void free_stmt(Stmt* stmt) {
+  if (stmt == NULL) {
+    return;
+  }
+
   switch (stmt->type) {
     case STMT_EXPR:
       free_expr(as_expr_stmt(stmt)->expr);

@@ -19,7 +19,7 @@ void report_syntax_error(SyntaxError* err) {
   Token* token = err->token;
   switch (token->type) {
     case TOKEN_ERROR:
-      fprintf(stderr, "[line %zu] Error: %s\n", token->line, token->literal.error);
+      fprintf(stderr, "[line %zu] Error: %s\n", token->line, token->literal.data.error);
       break;
     case TOKEN_EOF:
       fprintf(stderr, "[line %zu] Error at end: %s\n", token->line, err->message);
@@ -34,26 +34,26 @@ void report_runtime_error(RuntimeError err) {
   fprintf(stderr, "%s\n[line %zu]\n", err.message, err.token->line);
 }
 
-static void print_literal_value(Token* token) {
-  assert(is_token_literal_value(token));
+static void print_literal_token(Token* token) {
+  assert(is_literal_token(token));
 
   switch (token->type) {
     case TOKEN_NIL:
       printf("nil");
       break;
     case TOKEN_NUMBER:
-      if (is_int(token->literal.num)) {
-        printf("%d.0", (int)token->literal.num);
+      if (is_int(token->literal.data.num)) {
+        printf("%d.0", (int)token->literal.data.num);
       } else {
         print_token_lexeme(token->lexeme);
       }
       break;
     case TOKEN_TRUE:
     case TOKEN_FALSE:
-      printf("%s", token->literal.boolean == true ? "true" : "false");
+      printf("%s", token->literal.data.boolean == true ? "true" : "false");
       break;
     case TOKEN_STRING:
-      printf("%s", token->literal.str);
+      printf("%s", token->literal.data.str);
       break;
     default:
       unreachable_code();
@@ -74,8 +74,8 @@ void print_token(Token* token) {
   printf(" ");
 
   // TOKEN_NIL literal is "null" in tokenize cmd, like non literal values tokens
-  if (is_token_literal_value(token) && token->type != TOKEN_NIL) {
-    print_literal_value(token);
+  if (is_literal_token(token) && token->type != TOKEN_NIL) {
+    print_literal_token(token);
   } else {
     printf("null");
   }
@@ -195,7 +195,8 @@ static void print_grouping_expr(GroupingExpr* expr) {
 }
 
 static void print_literal_expr(LiteralExpr* expr) {
-  print_literal_value(expr->literal);
+  assert(expr->literal_token != NULL);
+  print_literal_token(expr->literal_token);
 }
 
 static void print_ternary_expr(TernaryExpr* expr) {
@@ -279,7 +280,8 @@ static void rpn_print_unary_expr(UnaryExpr* expr) {
 }
 
 static void rpn_print_literal_expr(LiteralExpr* expr) {
-  print_literal_value(expr->literal);
+  assert(expr->literal_token != NULL);
+  print_literal_token(expr->literal_token);
 }
 
 static void rpn_print_ternary_expr(TernaryExpr* expr) {

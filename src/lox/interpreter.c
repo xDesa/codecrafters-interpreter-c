@@ -159,16 +159,17 @@ Value evaluate(Environment* env, Expr* expr) {
 }
 
 static Value evaluate_literal(LiteralExpr* expr) {
-  if (is_nil_literal(expr->literal)) {
-    return new_nil_value();
-  } else if (is_num_literal(expr->literal)) {
-    return new_num_value(expr->literal->literal.num);
-  } else if (is_bool_literal(expr->literal)) {
-    return new_bool_value(expr->literal->literal.boolean);
-  } else if (is_str_literal(expr->literal)) {
-    return new_str_value(expr->literal->literal.str);
-  } else {
-    unreachable_code();
+  switch (expr->literal.type) {
+    case LITERAL_NIL:
+      return new_nil_value();
+    case LITERAL_NUM:
+      return new_num_value(expr->literal.data.num);
+    case LITERAL_BOOL:
+      return new_bool_value(expr->literal.data.boolean);
+    case LITERAL_STR:
+      return new_str_value(expr->literal.data.str);
+    default:
+      unreachable_code();
   }
 }
 

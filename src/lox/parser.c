@@ -32,6 +32,7 @@ static ParseResult expr_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult block_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult if_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 static ParseResult while_stmt(Parser* parser, Stmt** output, SyntaxError** err);
+static ParseResult for_stmt(Parser* parser, Stmt** output, SyntaxError** err);
 
 static ParseResult block(Parser* parser, List* stmts, SyntaxError** err);
 
@@ -138,6 +139,10 @@ static ParseResult statement(Parser* parser, Stmt** output, SyntaxError** err) {
     return while_stmt(parser, output, err);
   }
 
+  if (consume(parser, TOKEN_FOR) != NULL) {
+    return for_stmt(parser, output, err);
+  }
+
   return expr_stmt(parser, output, err);
 }
 
@@ -229,6 +234,83 @@ static ParseResult while_stmt(Parser* parser, Stmt** output, SyntaxError** err) 
   });
 
   return OUTPUT(output, new_while_stmt(condition, body));
+}
+
+static ParseResult for_stmt(Parser* parser, Stmt** output, SyntaxError** err) {
+  /*
+                                            ->    initializer
+    for(initializer;condition;increment) {  ->    while(condition) {
+      body                                  ->      body
+    }                                       ->      increment
+                                            ->    }
+  */
+  if (consume(parser, TOKEN_LEFT_PAREN) == NULL) {
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect '(' after 'for'."));
+  }
+
+  Stmt* initializer = NULL;
+  if (consume(parser, TOKEN_SEMICOLON) != NULL) {
+    initializer = NULL;
+  } else if (consume(parser, TOKEN_VAR) != NULL) {
+    initializer = TRY_PARSE_STMT(parser, var_declaration, err);
+  } else {
+    initializer = TRY_PARSE_STMT(parser, expr_stmt, err);
+  }
+
+  Expr* condition = NULL;
+  if (!check(parser, TOKEN_SEMICOLON)) {
+    condition = TRY_PARSE(parser, expression, err, {
+      free_stmt(initializer);
+      free_expr(condition);
+    });
+  } else {
+    condition = new_literal_expr(NULL, new_bool_literal(true));
+  }
+
+  if (consume(parser, TOKEN_SEMICOLON) == NULL) {
+    free_stmt(initializer);
+    free_expr(condition);
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ';' after loop condition."));
+  }
+
+  Expr* increment = NULL;
+  if (!check(parser, TOKEN_RIGHT_PAREN)) {
+    increment = TRY_PARSE(parser, expression, err, {
+      free_stmt(initializer);
+      free_expr(condition);
+    });
+  }
+
+  if (consume(parser, TOKEN_RIGHT_PAREN) == NULL) {
+    free_stmt(initializer);
+    free_expr(condition);
+    free_expr(increment);
+    return SYNTAX_ERROR(err, new_syntax_err(peek(parser), "Expect ')' after for clauses."));
+  }
+
+  Stmt* body = TRY_PARSE_STMT(parser, statement, err, {
+    free_stmt(initializer);
+    free_expr(condition);
+    free_expr(increment);
+  });
+
+  if (increment != NULL) {
+    List new_body_with_increment = new_list();
+    list_append(&new_body_with_increment, body);
+    list_append(&new_body_with_increment, new_expr_stmt(increment));
+    body = new_block_stmt(new_body_with_increment);
+  }
+
+  body = new_while_stmt(condition, body);
+
+  if (initializer != NULL) {
+    List new_body_with_initializer = new_list();
+    list_append(&new_body_with_initializer, initializer);
+    list_append(&new_body_with_initializer, body);
+    body = new_block_stmt(new_body_with_initializer);
+  }
+
+  return OUTPUT(output, body);
 }
 
 ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError** err) {
@@ -403,8 +485,8 @@ static ParseResult unary(Parser* parser, Expr** output, SyntaxError** err) {
 static ParseResult primary(Parser* parser, Expr** output, SyntaxError** err) {
   Token* token = advance(parser);
 
-  if (is_token_literal_value(token)) {
-    return OUTPUT(output, new_literal_expr(token));
+  if (is_literal_token(token)) {
+    return OUTPUT(output, new_literal_expr(token, token->literal));
   }
 
   if (token->type == TOKEN_IDENTIFIER) {
