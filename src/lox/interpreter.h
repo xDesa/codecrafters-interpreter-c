@@ -11,8 +11,8 @@ typedef struct {
   Environment env;
 } Interpreter;
 
-static inline Interpreter new_interpreter() {
-  return (Interpreter) { .env = new_env(NULL) };
+static inline Interpreter new_interpreter(Environment* enclosing_env) {
+  return (Interpreter) { .env = new_env(enclosing_env) };
 }
 
 Value evaluate(Interpreter* interpreter, Expr* expr);

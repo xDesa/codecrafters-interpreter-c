@@ -1,5 +1,4 @@
 #include "interpreter.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include "../utils/panic.h"
 #include "environment.h"
@@ -96,16 +95,13 @@ static Value execute_var_decl(Interpreter* interpreter, VarDeclStmt* stmt) {
 }
 
 static Value execute_block(Interpreter* interpreter, BlockStmt* stmt) {
-  Environment enclosing_env = interpreter->env;
-  Environment block_env = new_env(&enclosing_env);
-  interpreter->env = block_env;
+  Interpreter block_interpreter = new_interpreter(&interpreter->env);
   RuntimeError err;
 
   bool is_interpreter_ok
-      = interpret(interpreter, &stmt->stmts, &err);
+      = interpret(&block_interpreter, &stmt->stmts, &err);
 
-  interpreter->env = enclosing_env;
-  free_env(&block_env);
+  free_interpreter(block_interpreter);
 
   if (!is_interpreter_ok) {
     return new_err_value(err);
