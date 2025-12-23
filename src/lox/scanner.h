@@ -1,7 +1,7 @@
 #ifndef CLOX_SCANNER_H
 #define CLOX_SCANNER_H
 
-#include "../utils/list.h"
+#include "token.h"
 
 typedef struct {
   const char* source;
@@ -19,6 +19,6 @@ static inline bool has_scanner_error(Scanner scanner) {
   return scanner.has_error;
 }
 
-List scan_tokens(Scanner* scanner);
+TokenVec scan_tokens(Scanner* scanner);
 
 #endif /* CLOX_SCANNER_H */

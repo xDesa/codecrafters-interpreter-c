@@ -29,7 +29,7 @@ Stmt* new_var_decl_stmt(Token* name, Expr* initializer) {
   return (Stmt*)stmt;
 }
 
-Stmt* new_block_stmt(List stmts) {
+Stmt* new_block_stmt(StmtVec stmts) {
   BlockStmt* stmt = xmalloc(sizeof(BlockStmt));
   stmt->base.type = STMT_BLOCK;
   stmt->stmts = stmts;
@@ -72,7 +72,7 @@ void free_stmt(Stmt* stmt) {
       free_expr(as_var_decl_stmt(stmt)->initializer);
       break;
     case STMT_BLOCK:
-      free_list(&as_block_stmt(stmt)->stmts, (Iterator)free_stmt);
+      free_stmt_vec(&as_block_stmt(stmt)->stmts);
       break;
     case STMT_IF:
       IfStmt* if_stmt = as_if_stmt(stmt);

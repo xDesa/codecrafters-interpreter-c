@@ -1,10 +1,10 @@
 #ifndef CLOX_INTERPRETER_H
 #define CLOX_INTERPRETER_H
 
-#include "../utils/list.h"
 #include "environment.h"
 #include "error.h"
 #include "expr.h"
+#include "stmt.h"
 #include "value.h"
 
 typedef struct {
@@ -16,7 +16,7 @@ static inline Interpreter new_interpreter(Environment* enclosing_env) {
 }
 
 Value evaluate(Interpreter* interpreter, Expr* expr);
-bool interpret(Interpreter* interpreter, List* stmts, RuntimeError* err);
+bool interpret(Interpreter* interpreter, StmtVec* stmts, RuntimeError* err);
 
 static inline void free_interpreter(Interpreter interpreter) {
   free_env(&interpreter.env);

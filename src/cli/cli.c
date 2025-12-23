@@ -7,9 +7,7 @@
 #include "../lox/interpreter.h"
 #include "../lox/parser.h"
 #include "../lox/scanner.h"
-#include "../lox/stmt.h"
 #include "../lox/token.h"
-#include "../utils/list.h"
 #include "cli.h"
 #include "file.h"
 #include "printers.h"
@@ -72,11 +70,13 @@ CommandResult tokenize_cmd(const char* file_path) {
 
   Scanner scanner = new_scanner(file_contents);
 
-  List tokens = scan_tokens(&scanner);
+  TokenVec tokens = scan_tokens(&scanner);
 
-  list_foreach(tokens, (Iterator)print_token);
+  vec_for_each(&tokens, Token, token) {
+    print_token(*token);
+  }
 
-  free_list(&tokens, (Iterator)free_token);
+  free_token_vec(&tokens);
   free(file_contents);
 
   return !has_scanner_error(scanner) ? CMD_OK : CMD_SYNTAX_ERR;
@@ -87,12 +87,12 @@ CommandResult parse_cmd(const char* file_path) {
 
   Scanner scanner = new_scanner(file_contents);
 
-  List tokens = scan_tokens(&scanner);
+  TokenVec tokens = scan_tokens(&scanner);
 
   Parser parser = new_parser(tokens);
 
   Expr* output = NULL;
-  SyntaxError* err;
+  SyntaxError err;
 
   ParseResult res = parse_expr(&parser, &output, &err);
 
@@ -104,7 +104,7 @@ CommandResult parse_cmd(const char* file_path) {
     free_syntax_err(err);
   }
 
-  free_list(&tokens, (Iterator)free_token);
+  free_token_vec(&tokens);
   free(file_contents);
 
   return res == PARSE_OK ? CMD_OK : CMD_SYNTAX_ERR;
@@ -114,11 +114,11 @@ CommandResult evaluate_cmd(FilePath file_path) {
   char* file_contents = read_file_contents(file_path);
 
   Scanner scanner = new_scanner(file_contents);
-  List tokens = scan_tokens(&scanner);
+  TokenVec tokens = scan_tokens(&scanner);
 
   Parser parser = new_parser(tokens);
   Expr* parsed_expr = NULL;
-  SyntaxError* syntax_err;
+  SyntaxError syntax_err;
 
   ParseResult parse_res = parse_expr(&parser, &parsed_expr, &syntax_err);
 
@@ -126,13 +126,13 @@ CommandResult evaluate_cmd(FilePath file_path) {
     report_syntax_error(syntax_err);
 
     free_syntax_err(syntax_err);
-    free_list(&tokens, (Iterator)free_token);
+    free_token_vec(&tokens);
     free(file_contents);
 
     return CMD_SYNTAX_ERR;
   }
 
-  Interpreter interpreter = new_interpreter();
+  Interpreter interpreter = new_interpreter(NULL);
   Value output_value = evaluate(&interpreter, parsed_expr);
 
   int is_err_val = is_value_type(output_value, VALUE_ERR);
@@ -146,7 +146,7 @@ CommandResult evaluate_cmd(FilePath file_path) {
   free_value(output_value);
   free_interpreter(interpreter);
   free_expr(parsed_expr);
-  free_list(&tokens, (Iterator)free_token);
+  free_token_vec(&tokens);
   free(file_contents);
 
   return !is_err_val ? CMD_OK : CMD_RUNTIME_ERR;
@@ -156,27 +156,29 @@ CommandResult run_cmd(FilePath file_path) {
   char* file_contents = read_file_contents(file_path);
 
   Scanner scanner = new_scanner(file_contents);
-  List tokens = scan_tokens(&scanner);
+  TokenVec tokens = scan_tokens(&scanner);
 
   Parser parser = new_parser(tokens);
-  List stmts = new_list();
-  List errors = new_list();
+  StmtVec stmts = { 0 };
+  ParseErrors errors = { 0 };
 
   ParseResult parse_res = parse(&parser, &stmts, &errors);
 
   if (parse_res != PARSE_OK) {
-    list_foreach(errors, (Iterator)report_syntax_error);
+    vec_for_each(&errors, SyntaxError, err) {
+      report_syntax_error(*err);
+    }
 
-    free_list(&stmts, (Iterator)free_stmt);
-    free_list(&errors, (Iterator)free_syntax_err);
-    free_list(&tokens, (Iterator)free_token);
+    free_stmt_vec(&stmts);
+    free_parse_errors(&errors);
+    free_token_vec(&tokens);
     free(file_contents);
 
     return CMD_SYNTAX_ERR;
   }
 
   RuntimeError err;
-  Interpreter interpreter = new_interpreter();
+  Interpreter interpreter = new_interpreter(NULL);
 
   bool interpreter_ok = interpret(&interpreter, &stmts, &err);
 
@@ -186,9 +188,9 @@ CommandResult run_cmd(FilePath file_path) {
   }
 
   free_interpreter(interpreter);
-  free_list(&stmts, (Iterator)free_stmt);
-  free_list(&errors, (Iterator)free_syntax_err);
-  free_list(&tokens, (Iterator)free_token);
+  free_stmt_vec(&stmts);
+  free_parse_errors(&errors);
+  free_token_vec(&tokens);
   free(file_contents);
 
   return interpreter_ok ? CMD_OK : CMD_RUNTIME_ERR;

@@ -3,6 +3,7 @@
 
 #include "../utils/mem.h"
 #include "../utils/slice.h"
+#include "../utils/vec.h"
 
 // clang-format off
 typedef enum {
@@ -59,6 +60,11 @@ typedef struct {
   size_t line;
 } Token;
 
+typedef VecType(Token) TokenVec;
+
+#define free_token_vec(vec) \
+  free_vec_with(vec, Token, free_token)
+
 #ifndef ERROR_MSG_BUFFER_LENGTH
 #define ERROR_MSG_BUFFER_LENGTH 1024
 #endif
@@ -81,17 +87,21 @@ static inline LiteralValue new_str_literal(char* str, size_t length) {
 
 LiteralValue new_err_literal(const char* message, ...) __attribute__((format(printf, 1, 2)));
 
-static inline bool is_literal_token(Token* token) {
-  return token->type == TOKEN_NIL
-      || token->type == TOKEN_NUMBER
-      || token->type == TOKEN_TRUE || token->type == TOKEN_FALSE
-      || token->type == TOKEN_STRING;
+static inline bool is_literal_token(Token token) {
+  return token.type == TOKEN_NIL
+      || token.type == TOKEN_NUMBER
+      || token.type == TOKEN_TRUE || token.type == TOKEN_FALSE
+      || token.type == TOKEN_STRING;
 }
 
-Token* new_token(TokenType type, LiteralValue literal, const char* lexeme, size_t length, size_t line) __attribute__((malloc));
+static inline Token new_token(TokenType type, LiteralValue literal, const char* lexeme, size_t length, size_t line) {
+  return (Token) { type, literal, new_str_slice(lexeme, length), line };
+}
 
 void free_literal(LiteralValue literal);
 
-void free_token(Token* token);
+static inline void free_token(Token token) {
+  free_literal(token.literal);
+}
 
 #endif /* CLOX_TOKEN_H */

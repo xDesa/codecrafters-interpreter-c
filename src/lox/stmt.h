@@ -1,7 +1,6 @@
 #ifndef CLOX_STMT_H
 #define CLOX_STMT_H
 
-#include "../utils/list.h"
 #include "expr.h"
 
 typedef enum {
@@ -33,9 +32,13 @@ typedef struct {
   Expr* initializer;
 } VarDeclStmt;
 
+typedef VecType(Stmt*) StmtVec;
+#define free_stmt_vec(vec) \
+  free_vec_with(vec, Stmt*, free_stmt)
+
 typedef struct {
   Stmt base;
-  List stmts;
+  StmtVec stmts;
 } BlockStmt;
 
 typedef struct {
@@ -81,7 +84,7 @@ Stmt* new_print_stmt(Expr* expr);
 
 Stmt* new_var_decl_stmt(Token* name, Expr* initializer);
 
-Stmt* new_block_stmt(List stmts);
+Stmt* new_block_stmt(StmtVec stmts);
 
 Stmt* new_if_stmt(Expr* condition, Stmt* then_branch, Stmt* else_branch);
 

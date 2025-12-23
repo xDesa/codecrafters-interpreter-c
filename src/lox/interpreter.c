@@ -35,9 +35,9 @@ static Value evaluate_assignment(Interpreter* interpreter, AssignmentExpr* expr)
 
 static bool is_truthy(Value value);
 
-bool interpret(Interpreter* interpreter, List* stmts, RuntimeError* err) {
-  for (ListNode* curr = stmts->head; curr != NULL; curr = curr->next) {
-    Value val = execute(interpreter, curr->data);
+bool interpret(Interpreter* interpreter, StmtVec* stmts, RuntimeError* err) {
+  vec_for_each(stmts, Stmt*, stmt) {
+    Value val = execute(interpreter, *stmt);
 
     if (is_value_type(val, VALUE_ERR)) {
       *err = as_err_value(val);

@@ -19,16 +19,6 @@ LiteralValue new_err_literal(const char* message, ...) {
   return (LiteralValue) { LITERAL_ERR, { .error = xstrndup(buffer, length) } };
 }
 
-Token* new_token(TokenType type, LiteralValue literal, const char* lexeme, size_t length, size_t line) {
-  Token* new_token = xmalloc(sizeof(Token));
-  new_token->type = type;
-  new_token->literal = literal;
-  new_token->lexeme = new_str_slice(lexeme, length);
-  new_token->line = line;
-
-  return new_token;
-}
-
 void free_literal(LiteralValue literal) {
   switch (literal.type) {
     case LITERAL_STR:
@@ -41,13 +31,4 @@ void free_literal(LiteralValue literal) {
       // no other memory to free
       break;
   }
-}
-
-void free_token(Token* token) {
-  if (token == NULL) {
-    return;
-  }
-
-  free_literal(token->literal);
-  free(token);
 }

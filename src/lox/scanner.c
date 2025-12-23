@@ -6,11 +6,11 @@
 
 #include "token.h"
 
-static Token* scan_token(Scanner* scanner);
+static Token scan_token(Scanner* scanner);
 static bool skip_whitespaces_and_comments(Scanner* scanner);
-static Token* string(Scanner* scanner);
-static Token* number(Scanner* scanner);
-static Token* identifier(Scanner* scanner);
+static Token string(Scanner* scanner);
+static Token number(Scanner* scanner);
+static Token identifier(Scanner* scanner);
 
 static inline bool is_scanner_at_end(Scanner* scanner);
 static inline void start_scanner(Scanner* scanner);
@@ -26,20 +26,20 @@ static inline bool is_alphabetic(char c);
 static inline bool is_alphanumeric(char c);
 
 static inline size_t token_length(Scanner* scanner);
-static Token* create_token(Scanner* scanner, TokenType type, LiteralValue literal);
-static inline Token* create_nil_token(Scanner* scanner, TokenType type);
+static Token create_token(Scanner* scanner, TokenType type, LiteralValue literal);
+static inline Token create_nil_token(Scanner* scanner, TokenType type);
 
-List scan_tokens(Scanner* scanner) {
-  List tokens = new_list();
+TokenVec scan_tokens(Scanner* scanner) {
+  TokenVec tokens = { 0 };
 
   do {
-    list_append(&tokens, scan_token(scanner));
-  } while (((Token*)list_get_last_data(tokens))->type != TOKEN_EOF);
+    vec_push(&tokens, scan_token(scanner));
+  } while (vec_last(&tokens).type != TOKEN_EOF);
 
   return tokens;
 }
 
-static Token* scan_token(Scanner* scanner) {
+static Token scan_token(Scanner* scanner) {
   bool multiline_comment_closed = skip_whitespaces_and_comments(scanner);
 
   if (!multiline_comment_closed) {
@@ -149,7 +149,7 @@ static bool skip_whitespaces_and_comments(Scanner* scanner) {
   }
 }
 
-static Token* string(Scanner* scanner) {
+static Token string(Scanner* scanner) {
   while (peek(scanner) != '\"' && !is_scanner_at_end(scanner)) {
     advance(scanner);
   }
@@ -166,7 +166,7 @@ static Token* string(Scanner* scanner) {
   return create_token(scanner, TOKEN_STRING, new_str_literal((char*)str_literal_start, str_literal_length));
 }
 
-static Token* number(Scanner* scanner) {
+static Token number(Scanner* scanner) {
   while (is_digit(peek(scanner))) {
     advance(scanner);
   }
@@ -252,7 +252,7 @@ static TokenType identifier_type(Scanner* scanner) {
   return TOKEN_IDENTIFIER;
 }
 
-static Token* identifier(Scanner* scanner) {
+static Token identifier(Scanner* scanner) {
   while (is_alphanumeric(peek(scanner))) {
     advance(scanner);
   }
@@ -341,7 +341,7 @@ static inline size_t token_length(Scanner* scanner) {
   return scanner->current - scanner->start;
 }
 
-static Token* create_token(Scanner* scanner, TokenType type, LiteralValue literal) {
+static Token create_token(Scanner* scanner, TokenType type, LiteralValue literal) {
   if (type == TOKEN_ERROR) {
     scanner->has_error = true;
   }
@@ -349,6 +349,6 @@ static Token* create_token(Scanner* scanner, TokenType type, LiteralValue litera
   return new_token(type, literal, scanner->start, token_length(scanner), scanner->line);
 }
 
-static inline Token* create_nil_token(Scanner* scanner, TokenType type) {
+static inline Token create_nil_token(Scanner* scanner, TokenType type) {
   return create_token(scanner, type, new_nil_literal());
 }

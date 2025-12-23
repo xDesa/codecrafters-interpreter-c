@@ -6,10 +6,10 @@
 #include "../lox/expr.h"
 #include "../lox/token.h"
 
-void report_syntax_error(SyntaxError* err);
+void report_syntax_error(SyntaxError err);
 void report_runtime_error(RuntimeError err);
 
-void print_token(Token* token);
+void print_token(Token token);
 
 void print_expr(Expr* expr);
 static inline void println_expr(Expr* expr) {

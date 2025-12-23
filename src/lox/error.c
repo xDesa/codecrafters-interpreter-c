@@ -2,10 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-SyntaxError* new_syntax_err(Token* token, const char* message, ...) {
-  SyntaxError* err = xmalloc(sizeof(SyntaxError));
-  err->token = token;
-  err->message = NULL;
+SyntaxError new_syntax_err(Token* token, const char* message, ...) {
+  SyntaxError err = { token, NULL };
 
   if (message == NULL) {
     return err;
@@ -20,17 +18,15 @@ SyntaxError* new_syntax_err(Token* token, const char* message, ...) {
 
   va_end(args);
 
-  err->message = xstrndup(buffer, length);
+  err.message = xstrndup(buffer, length);
 
   return err;
 }
 
-void free_syntax_err(SyntaxError* err) {
-  if (err->message != NULL) {
-    free(err->message);
+void free_syntax_err(SyntaxError err) {
+  if (err.message != NULL) {
+    free(err.message);
   }
-
-  free(err);
 }
 
 RuntimeError new_runtime_err(Token* token, const char* message, ...) {

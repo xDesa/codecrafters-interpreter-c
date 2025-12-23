@@ -1,13 +1,14 @@
 #ifndef CLOX_PARSER_H
 #define CLOX_PARSER_H
 
-#include "../utils/list.h"
 #include "error.h"
 #include "expr.h"
+#include "stmt.h"
+#include "token.h"
 
 typedef struct {
-  List tokens;
-  ListNode* current;
+  TokenVec tokens;
+  Token* current;
 } Parser;
 
 typedef enum {
@@ -15,11 +16,15 @@ typedef enum {
   SYNTAX_ERROR,
 } ParseResult;
 
-static inline Parser new_parser(List tokens) {
-  return (Parser) { tokens, tokens.head };
+static inline Parser new_parser(TokenVec tokens) {
+  return (Parser) { tokens, tokens.items };
 }
 
-ParseResult parse(Parser* parser, List* output, List* errors);
-ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError** err);
+typedef VecType(SyntaxError) ParseErrors;
+#define free_parse_errors(vec) \
+  free_vec_with(vec, SyntaxError, free_syntax_err)
+
+ParseResult parse(Parser* parser, StmtVec* output, ParseErrors* errors);
+ParseResult parse_expr(Parser* parser, Expr** output, SyntaxError* err);
 
 #endif /* CLOX_PARSER_H */

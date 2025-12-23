@@ -8,9 +8,9 @@ typedef struct {
   char* message;
 } SyntaxError;
 
-SyntaxError* new_syntax_err(Token* token, const char* message, ...) __attribute__((format(printf, 2, 3)));
+SyntaxError new_syntax_err(Token* token, const char* message, ...) __attribute__((format(printf, 2, 3)));
 
-void free_syntax_err(SyntaxError* err);
+void free_syntax_err(SyntaxError err);
 
 typedef struct {
   Token* token;

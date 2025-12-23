@@ -32,7 +32,7 @@ Expr* new_grouping_expr(Expr* subexpr) {
 }
 
 Expr* new_literal_expr(Token* literal_token, LiteralValue literal) {
-  assert(literal_token == NULL || is_literal_token(literal_token));
+  assert(literal_token == NULL || is_literal_token(*literal_token));
 
   LiteralExpr* literal_expr = xmalloc(sizeof(LiteralExpr));
   literal_expr->base.type = EXPR_LITERAL;
